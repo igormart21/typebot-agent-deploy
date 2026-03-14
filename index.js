@@ -96,19 +96,21 @@ app.post('/agente', async (req, res) => {
   try {
     const { sessionId, mensagem } = req.body;
 
-    if (!sessionId || !mensagem) {
-      return res.status(400).json({ erro: 'sessionId e mensagem são obrigatórios' });
+    if (!mensagem) {
+      return res.status(400).json({ erro: 'mensagem é obrigatória' });
     }
 
+    const id = sessionId || 'preview-session';
+
     // Inicializa sessão se não existir
-    if (!sessions[sessionId]) {
-      sessions[sessionId] = {
+    if (!sessions[id]) {
+      sessions[id] = {
         historico: [],
         criadoEm: new Date().toISOString()
       };
     }
 
-    const sessao = sessions[sessionId];
+    const sessao = sessions[id];
 
     // Adiciona mensagem do usuário ao histórico
     sessao.historico.push({ role: 'user', content: mensagem });
