@@ -152,7 +152,7 @@ app.post('/agente', async (req, res) => {
     }
 
     // Retorna resposta para o Typebot
-    res.json({ resposta });
+    res.send(resposta);
 
   } catch (err) {
     console.error('Erro interno:', err);
