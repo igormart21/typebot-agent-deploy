@@ -1,0 +1,6 @@
+app.chatstack.com.br {
+    reverse_proxy typebot-builder:3000
+}
+viewer.chatstack.com.br {
+    reverse_proxy typebot-viewer:3000
+}
