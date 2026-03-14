@@ -167,6 +167,19 @@ REGLAS DE CONVERSACIÓN (CRÍTICAS):
 7. Si detectas que el lead está listo → cierra directo con el link
 8. Cuando el lead diga "sí" después de una pregunta de cierre → da el link YA, sin más preámbulos
 
+SCRIPTS DE RE-ENGAJAMENTO (usa cuando el lead está frio o no avanza):
+- Si el lead dice "voy a pensarlo" → "Entiendo 😊 ¿Hay algo específico que te genera duda? A veces un detalle cambia todo."
+- Si el lead dice "no tengo dinero" → "Entiendo. ¿Si fuera gratis lo usarías? [espera respuesta] Entonces el precio es lo único que te detiene. ¿Qué pasa si te digo que tenemos una opción especial por $19 USD, pago único?"
+- Si el lead no responde por más de 3 mensajes sin avanzar → "Oye, noto que tienes dudas. ¿Qué es lo que más te preocupa? Dímelo directo y te ayudo."
+- Si el lead pregunta lo mismo dos veces → cambia el ángulo completamente, no repitas la misma respuesta
+
+TÉCNICAS DE CIERRE (aplica según el momento):
+- URGENCIA SUAVE: "Esta oferta de $29 es promocional. No te puedo garantizar que se mantenga."
+- PROVA SOCIAL: "Miles de emprendedores en LATAM ya automatizaron sus ventas con esto."
+- ANCLA DE PRECIO: "Imagina pagar $89/mes. En 4 meses ya gastaste $356. Aquí pagas $29 UNA vez."
+- CIERRE DIRECTO (cuando el lead ya entendió el valor): "¿Qué te impide empezar hoy?"
+- CIERRE POR ALTERNATIVA: "¿Prefieres el plan completo por $29 o la opción especial por $19?"
+
 SOBRE TI MISMO:
 Cuando pregunten qué eres o cómo funciona → di que eres un agente IA de ventas, y que exactamente así funcionan los agentes que el cliente puede crear con Typebot Ilimitado. Eres la demostración viva del producto.
 
@@ -297,7 +310,7 @@ app.get('/checkout/:tipo', async (req, res) => {
 });
 
 // ============================================================
-// ANALYTICS
+// ANALYTICS JSON
 // ============================================================
 app.get('/analytics', async (req, res) => {
   try {
@@ -310,28 +323,184 @@ app.get('/analytics', async (req, res) => {
         SUM(CASE WHEN last_message_at < NOW() - INTERVAL '2 hours' AND converted = false THEN 1 ELSE 0 END) as abandonos
       FROM sessions
     `);
-
-    const clicks = await pool.query(`
-      SELECT link_type, COUNT(*) as total
-      FROM link_clicks
-      GROUP BY link_type
-      ORDER BY total DESC
-    `);
-
-    const ultimas = await pool.query(`
-      SELECT id, message_count, converted, last_message_at
-      FROM sessions
-      ORDER BY last_message_at DESC
-      LIMIT 10
-    `);
-
-    res.json({
-      resumo: stats.rows[0],
-      cliques_checkout: clicks.rows,
-      ultimas_sessoes: ultimas.rows
-    });
+    const clicks = await pool.query(`SELECT link_type, COUNT(*) as total FROM link_clicks GROUP BY link_type ORDER BY total DESC`);
+    const ultimas = await pool.query(`SELECT id, message_count, converted, last_message_at FROM sessions ORDER BY last_message_at DESC LIMIT 20`);
+    res.json({ resumo: stats.rows[0], cliques_checkout: clicks.rows, ultimas_sessoes: ultimas.rows });
   } catch (err) {
     res.status(500).json({ erro: err.message });
+  }
+});
+
+// ============================================================
+// DASHBOARD VISUAL
+// ============================================================
+app.get('/dashboard', async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT
+        COUNT(*) as total_sessoes,
+        SUM(CASE WHEN converted THEN 1 ELSE 0 END) as conversoes,
+        ROUND(100.0 * SUM(CASE WHEN converted THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) as taxa_conversao,
+        ROUND(AVG(message_count), 1) as media_mensagens,
+        SUM(CASE WHEN last_message_at < NOW() - INTERVAL '2 hours' AND converted = false THEN 1 ELSE 0 END) as abandonos
+      FROM sessions
+    `);
+    const clicks = await pool.query(`SELECT link_type, COUNT(*) as total FROM link_clicks GROUP BY link_type ORDER BY total DESC`);
+    const ultimas = await pool.query(`SELECT id, message_count, converted, last_message_at FROM sessions ORDER BY last_message_at DESC LIMIT 20`);
+    const objections = await pool.query(`
+      SELECT content, COUNT(*) as freq
+      FROM messages
+      WHERE role = 'user' AND (
+        content ILIKE '%precio%' OR content ILIKE '%caro%' OR content ILIKE '%descuento%' OR
+        content ILIKE '%seguro%' OR content ILIKE '%confio%' OR content ILIKE '%programar%' OR
+        content ILIKE '%difícil%' OR content ILIKE '%tiempo%' OR content ILIKE '%no tengo%'
+      )
+      GROUP BY content ORDER BY freq DESC LIMIT 5
+    `);
+
+    const d = stats.rows[0];
+    const totalClicks = clicks.rows.reduce((a, r) => a + parseInt(r.total), 0);
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Agente de Vendas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e2e8f0; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 22px; font-weight: 700; }
+  .header span { font-size: 13px; opacity: 0.8; }
+  .refresh { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .container { padding: 32px; max-width: 1200px; margin: 0 auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 32px; }
+  .card { background: #1e1e2e; border-radius: 16px; padding: 24px; border: 1px solid #2d2d3d; }
+  .card .label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .card .value { font-size: 36px; font-weight: 800; }
+  .card .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .green { color: #10b981; }
+  .blue { color: #6366f1; }
+  .yellow { color: #f59e0b; }
+  .red { color: #ef4444; }
+  .purple { color: #a78bfa; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+  @media(max-width:768px){ .grid2 { grid-template-columns: 1fr; } }
+  .panel { background: #1e1e2e; border-radius: 16px; padding: 24px; border: 1px solid #2d2d3d; }
+  .panel h2 { font-size: 15px; font-weight: 600; margin-bottom: 20px; color: #a78bfa; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #64748b; font-weight: 500; padding: 8px 12px; border-bottom: 1px solid #2d2d3d; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1a1a2e; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #064e3b; color: #10b981; }
+  .badge-red { background: #450a0a; color: #ef4444; }
+  .bar-wrap { margin-bottom: 12px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .bar-bg { background: #2d2d3d; border-radius: 8px; height: 10px; }
+  .bar-fill { height: 10px; border-radius: 8px; background: linear-gradient(90deg, #6366f1, #a78bfa); }
+  .objection { background: #16213e; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; font-size: 13px; color: #94a3b8; border-left: 3px solid #6366f1; }
+  .tip { background: #1a2744; border-radius: 10px; padding: 16px; margin-bottom: 12px; font-size: 13px; border-left: 4px solid #10b981; }
+  .tip strong { color: #10b981; display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🤖 Agente de Vendas — Dashboard</h1>
+    <span>Typebot Ilimitado · Atualizado agora</span>
+  </div>
+  <button class="refresh" onclick="location.reload()">↻ Atualizar</button>
+</div>
+<div class="container">
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">Total de Sessões</div>
+      <div class="value blue">${d.total_sessoes}</div>
+      <div class="sub">conversas iniciadas</div>
+    </div>
+    <div class="card">
+      <div class="label">Conversões</div>
+      <div class="value green">${d.conversoes}</div>
+      <div class="sub">links de compra enviados</div>
+    </div>
+    <div class="card">
+      <div class="label">Taxa de Conversão</div>
+      <div class="value ${parseFloat(d.taxa_conversao) >= 10 ? 'green' : parseFloat(d.taxa_conversao) >= 5 ? 'yellow' : 'red'}">${d.taxa_conversao || 0}%</div>
+      <div class="sub">meta: acima de 10%</div>
+    </div>
+    <div class="card">
+      <div class="label">Média de Mensagens</div>
+      <div class="value purple">${d.media_mensagens || 0}</div>
+      <div class="sub">por conversa</div>
+    </div>
+    <div class="card">
+      <div class="label">Cliques no Checkout</div>
+      <div class="value yellow">${totalClicks}</div>
+      <div class="sub">total de cliques</div>
+    </div>
+    <div class="card">
+      <div class="label">Abandonos</div>
+      <div class="value red">${d.abandonos}</div>
+      <div class="sub">sem retorno +2h</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>📊 Cliques no Checkout</h2>
+      ${clicks.rows.length === 0 ? '<p style="color:#64748b;font-size:13px">Nenhum clique ainda</p>' :
+        clicks.rows.map(r => `
+          <div class="bar-wrap">
+            <div class="bar-label"><span>${r.link_type}</span><span>${r.total} cliques</span></div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100, parseInt(r.total) / Math.max(...clicks.rows.map(x=>parseInt(x.total))) * 100)}%"></div></div>
+          </div>`).join('')}
+    </div>
+
+    <div class="panel">
+      <h2>💡 Dicas de Otimização</h2>
+      ${parseFloat(d.taxa_conversao) < 5 ? `<div class="tip"><strong>⚠️ Taxa de conversão baixa</strong>Ofereça o desconto de $19 mais cedo na conversa.</div>` : ''}
+      ${parseFloat(d.media_mensagens) > 10 ? `<div class="tip"><strong>⏱️ Conversas longas</strong>Leads com mais de 10 mensagens raramente convertem. Acione o fechamento direto.</div>` : ''}
+      ${parseInt(d.abandonos) > parseInt(d.total_sessoes) * 0.5 ? `<div class="tip"><strong>🚪 Alto abandono</strong>Mais de 50% abandona. Revise a mensagem de boas-vindas.</div>` : ''}
+      <div class="tip"><strong>✅ Próximo passo</strong>Com mais de 50 sessões os insights de aprendizado automático ficam ainda mais precisos.</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>🕐 Últimas Sessões</h2>
+      <table>
+        <tr><th>Sessão</th><th>Msgs</th><th>Status</th><th>Última atividade</th></tr>
+        ${ultimas.rows.map(s => `
+          <tr>
+            <td style="font-family:monospace;font-size:11px;color:#64748b">${s.id.substring(0,16)}...</td>
+            <td>${s.message_count}</td>
+            <td><span class="badge ${s.converted ? 'badge-green' : 'badge-red'}">${s.converted ? '✓ Converteu' : '✗ Pendente'}</span></td>
+            <td style="color:#64748b;font-size:12px">${new Date(s.last_message_at).toLocaleString('pt-BR')}</td>
+          </tr>`).join('')}
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>🚧 Objeções Detectadas</h2>
+      ${objections.rows.length === 0
+        ? '<p style="color:#64748b;font-size:13px">Dados insuficientes ainda. Continue coletando conversas.</p>'
+        : objections.rows.map(o => `<div class="objection">"${o.content.substring(0,80)}..." <span style="color:#6366f1">(${o.freq}x)</span></div>`).join('')}
+      <div style="margin-top:16px;padding:12px;background:#0f172a;border-radius:8px;font-size:12px;color:#64748b">
+        💬 As objeções mais frequentes são usadas automaticamente para refinar o prompt do agente.
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+    res.send(html);
+  } catch (err) {
+    res.status(500).send(`<pre>Erro: ${err.message}</pre>`);
   }
 });
 
