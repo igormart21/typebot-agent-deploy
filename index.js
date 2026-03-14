@@ -113,30 +113,31 @@ app.post('/agente', async (req, res) => {
     // Adiciona mensagem do usuário ao histórico
     sessao.historico.push({ role: 'user', content: mensagem });
 
-    // Chama a API do Claude com todo o histórico
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Chama a API da OpenAI com todo o histórico
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'gpt-4o',
         max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        messages: sessao.historico
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...sessao.historico
+        ]
       })
     });
 
     if (!response.ok) {
       const erro = await response.text();
-      console.error('Erro Claude API:', erro);
-      return res.status(500).json({ erro: 'Erro ao chamar Claude API', detalhe: erro });
+      console.error('Erro OpenAI API:', erro);
+      return res.status(500).json({ erro: 'Erro ao chamar OpenAI API', detalhe: erro });
     }
 
     const data = await response.json();
-    const resposta = data.content?.[0]?.text;
+    const resposta = data.choices?.[0]?.message?.content;
 
     if (!resposta) {
       return res.status(500).json({ erro: 'Resposta vazia do Claude' });
