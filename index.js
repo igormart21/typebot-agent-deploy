@@ -230,21 +230,31 @@ app.post('/agente', async (req, res) => {
     const insights = await getInsights();
     const systemPrompt = buildSystemPrompt(id, insights);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: 1000,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...historico
-        ]
-      })
-    });
+    // Chama a API da OpenAI com todo o histórico e timeout de 20s
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
+    let response;
+    try {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          max_tokens: 1000,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...historico
+          ]
+        }),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       const erro = await response.text();
@@ -273,8 +283,12 @@ app.post('/agente', async (req, res) => {
     res.json({ resposta });
 
   } catch (err) {
-    console.error('Erro interno:', err);
-    res.status(500).json({ erro: 'Erro interno do servidor' });
+    console.error('Erro no processamento da mensagem:', err);
+    res.status(500).json({
+      erro: 'Erro interno no Agente v2',
+      mensagem: err.message,
+      detalhe: err.name === 'AbortError' ? 'Timeout da API OpenAI (20s)' : err.stack
+    });
   }
 });
 
@@ -455,7 +469,7 @@ app.get('/dashboard', async (req, res) => {
         clicks.rows.map(r => `
           <div class="bar-wrap">
             <div class="bar-label"><span>${r.link_type}</span><span>${r.total} cliques</span></div>
-            <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100, parseInt(r.total) / Math.max(...clicks.rows.map(x=>parseInt(x.total))) * 100)}%"></div></div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100, parseInt(r.total) / Math.max(...clicks.rows.map(x => parseInt(x.total))) * 100)}%"></div></div>
           </div>`).join('')}
     </div>
 
@@ -475,7 +489,7 @@ app.get('/dashboard', async (req, res) => {
         <tr><th>Sessão</th><th>Msgs</th><th>Status</th><th>Última atividade</th></tr>
         ${ultimas.rows.map(s => `
           <tr>
-            <td style="font-family:monospace;font-size:11px;color:#64748b">${s.id.substring(0,16)}...</td>
+            <td style="font-family:monospace;font-size:11px;color:#64748b">${s.id.substring(0, 16)}...</td>
             <td>${s.message_count}</td>
             <td><span class="badge ${s.converted ? 'badge-green' : 'badge-red'}">${s.converted ? '✓ Converteu' : '✗ Pendente'}</span></td>
             <td style="color:#64748b;font-size:12px">${new Date(s.last_message_at).toLocaleString('pt-BR')}</td>
@@ -487,7 +501,7 @@ app.get('/dashboard', async (req, res) => {
       <h2>🚧 Objeções Detectadas</h2>
       ${objections.rows.length === 0
         ? '<p style="color:#64748b;font-size:13px">Dados insuficientes ainda. Continue coletando conversas.</p>'
-        : objections.rows.map(o => `<div class="objection">"${o.content.substring(0,80)}..." <span style="color:#6366f1">(${o.freq}x)</span></div>`).join('')}
+        : objections.rows.map(o => `<div class="objection">"${o.content.substring(0, 80)}..." <span style="color:#6366f1">(${o.freq}x)</span></div>`).join('')}
       <div style="margin-top:16px;padding:12px;background:#0f172a;border-radius:8px;font-size:12px;color:#64748b">
         💬 As objeções mais frequentes são usadas automaticamente para refinar o prompt do agente.
       </div>
