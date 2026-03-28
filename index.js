@@ -210,6 +210,7 @@ Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funci
 // ROTA PRINCIPAL - Webhook do Typebot
 // ============================================================
 app.post('/agente', async (req, res) => {
+  console.log('Incoming request to /agente:', JSON.stringify(req.body));
   try {
     const { sessionId, mensagem } = req.body;
 
@@ -526,7 +527,9 @@ app.get('/', async (req, res) => {
   res.json({
     status: 'online',
     agente: 'Typebot Ilimitado Sales Agent v2',
-    sessoes_no_banco: stats.rows[0].sessoes
+    sessoes_no_banco: stats.rows[0].sessoes,
+    node: process.version,
+    uptime: Math.round(process.uptime())
   });
 });
 
