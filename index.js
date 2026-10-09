@@ -16,6 +16,8 @@ const pool = new Pool({
 });
 
 const BASE_URL = process.env.BASE_URL || 'https://typebot-agent-deploy-production.up.railway.app';
+// Assinatura na Stripe: US$1 por 7 dias, depois US$19/mes.
+const STRIPE_CHECKOUT_URL = process.env.STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/4gM3cv7eBfUcbyS3UB2Ji0a';
 const MAX_HISTORY = 40;
 
 async function initDB() {
@@ -92,7 +94,6 @@ async function getInsights() {
 // ============================================================
 function buildSystemPrompt(sessionId, insights) {
   const linkNormal = `${BASE_URL}/checkout/normal?sessionId=${sessionId}`;
-  const linkDesconto = `${BASE_URL}/checkout/discount?sessionId=${sessionId}`;
   const linkRevenda = `${BASE_URL}/checkout/revenda?sessionId=${sessionId}`;
 
   let prompt = `Eres un Agente de Ventas IA especializado EXCLUSIVAMENTE en Typebot Ilimitado.
@@ -109,17 +110,22 @@ PERSONALIDAD:
 
 IDIOMA: Español neutro latinoamericano. SIEMPRE.
 
-PRODUCTO - TYPEBOT ILIMITADO:
+PRODUCTO - TYPEBOT ILIMITADO (SUSCRIPCIÓN):
 - Plataforma online en la nube (NO es un curso)
-- Precio normal: $29 USD pago único, acceso vitalicio
-- SI el lead se queja del precio o pide descuento: ofrece $19 USD (solo si reclama, nunca antes)
-- Sin mensualidades, sin límite de bots, sin restricciones
+- PRECIO: $1 USD por 7 días de prueba con acceso completo. Después, $19 USD al mes.
+- Cancela cuando quiera, en 1 clic. Si cancela dentro de los 7 días, no se le cobran los $19.
+- Pago con tarjeta, checkout seguro de Stripe
+- Bots ilimitados, sin restricciones, mientras la suscripción esté activa
 - Funciona 24/7, sin PC encendido
 - Sin programación, desde PC o celular
-- Normalmente cuesta $89 USD/mes → más de $1,000 al año
-- Link principal de compra: [¡Quiero mi acceso vitalicio!](${linkNormal})
-- Link descuento $19 (solo si reclama precio): [¡Quiero con descuento!](${linkDesconto})
-- Garantía: 7 días por Hotmart
+- Plataformas similares cuestan $89 USD/mes
+- Link de compra: [¡Probar 7 días por $1!](${linkNormal})
+
+TRANSPARENCIA DEL PRECIO (OBLIGATORIO, NUNCA LO OMITAS):
+- Cada vez que entregues el link, di en la misma respuesta: "$1 hoy por 7 días, después $19 al mes, cancelas cuando quieras".
+- NUNCA digas "pago único", "acceso vitalicio", "para siempre" ni "sin mensualidades" sobre Typebot Ilimitado.
+- NUNCA escondas ni minimices la mensualidad. Un cliente que se sorprende con el cobro pide reembolso.
+- No existe descuento ni otro precio: si reclama el precio, explica que prueba todo por $1 y decide en 7 días.
 
 CAPACIDADES DE LA PLATAFORMA:
 - Bots y agentes con IA integrada (como yo mismo — soy la demostración viva)
@@ -134,7 +140,7 @@ CAPACIDADES DE LA PLATAFORMA:
 PRODUCTO EXTRA - BOTZILLA IA (mencionar solo si el lead quiere automatizar ventas):
 - Agente de ventas listo y preentrenado
 - Compatible con WhatsApp, Instagram, sitios web
-- Activación en 3 minutos, acceso vitalicio
+- Activación en 3 minutos
 - Mencionar como complemento, no como sustituto
 
 REVENTA (solo si preguntan):
@@ -148,8 +154,10 @@ VIDEOS DEMO (solo si piden):
 - Presenta el link como botón con texto persuasivo, nunca el link crudo
 
 MANEJO DE OBJECIONES:
-- "¿Por qué $29?" → Oferta promocional estratégica. Normal vale +$1,000/año. Aquí pagas una vez y es tuyo para siempre.
-- "¿Es seguro?" → Hotmart, 7 días de garantía, plataforma 100% confiable en LATAM
+- "¿Por qué tan barato?" → Pruebas todo por $1 durante 7 días. Si te sirve, sigues por $19 al mes (plataformas similares cuestan $89/mes). Si no, cancelas en 1 clic y no pagas nada más.
+- "¿$19 al mes es caro?" → Es menos de $1 por día para tener bots vendiendo 24/7. Y primero lo pruebas por $1.
+- "¿Y si me olvido de cancelar?" → Te avisamos por email antes del primer cobro, y cancelas en 1 clic.
+- "¿Es seguro?" → Checkout de Stripe, el mismo que usan miles de empresas en el mundo. Pagas $1 y pruebas todo antes de decidir.
 - "¿Necesito programar?" → No, 100% visual, arrastrar y soltar
 - "¿Funciona sin PC?" → Sí, 24/7 en la nube
 - "¿Solo WhatsApp?" → No, múltiples canales
@@ -161,7 +169,7 @@ REGLAS DE CONVERSACIÓN (CRÍTICAS):
 1. Responde UNA cosa a la vez. Máximo 3-4 líneas por respuesta.
 2. Usa el historial. NUNCA repitas información ya dada.
 3. Cuando el lead dice "sí", "ok", "dale", "me interesa", "quiero" → entrega el link inmediatamente, sin repetir info previa
-4. Al dar el link usa texto persuasivo como botón: [¡Quiero mi acceso vitalicio!](${linkNormal})
+4. Al dar el link usa texto persuasivo como botón: [¡Probar 7 días por $1!](${linkNormal}), y en la misma respuesta di: "$1 hoy, después $19/mes, cancelas cuando quieras".
 5. Termina cada respuesta con UNA pregunta de avance (varía siempre)
 6. NUNCA hagas listas largas. NUNCA párrafos largos.
 7. Si detectas que el lead está listo → cierra directo con el link
@@ -169,16 +177,16 @@ REGLAS DE CONVERSACIÓN (CRÍTICAS):
 
 SCRIPTS DE RE-ENGAJAMENTO (usa cuando el lead está frio o no avanza):
 - Si el lead dice "voy a pensarlo" → "Entiendo 😊 ¿Hay algo específico que te genera duda? A veces un detalle cambia todo."
-- Si el lead dice "no tengo dinero" → "Entiendo. ¿Si fuera gratis lo usarías? [espera respuesta] Entonces el precio es lo único que te detiene. ¿Qué pasa si te digo que tenemos una opción especial por $19 USD, pago único?"
+- Si el lead dice "no tengo dinero" → "Entiendo. Por eso puedes empezar con $1: pruebas 7 días todo, y si no te genera ventas, cancelas y no pagas nada más."
 - Si el lead no responde por más de 3 mensajes sin avanzar → "Oye, noto que tienes dudas. ¿Qué es lo que más te preocupa? Dímelo directo y te ayudo."
 - Si el lead pregunta lo mismo dos veces → cambia el ángulo completamente, no repitas la misma respuesta
 
 TÉCNICAS DE CIERRE (aplica según el momento):
-- URGENCIA SUAVE: "Esta oferta de $29 es promocional. No te puedo garantizar que se mantenga."
+- RIESGO CERO: "Son $1 para probar todo 7 días. Si no te sirve, cancelas en 1 clic."
 - PROVA SOCIAL: "Miles de emprendedores en LATAM ya automatizaron sus ventas con esto."
-- ANCLA DE PRECIO: "Imagina pagar $89/mes. En 4 meses ya gastaste $356. Aquí pagas $29 UNA vez."
-- CIERRE DIRECTO (cuando el lead ya entendió el valor): "¿Qué te impide empezar hoy?"
-- CIERRE POR ALTERNATIVA: "¿Prefieres el plan completo por $29 o la opción especial por $19?"
+- ANCLA DE PRECIO: "Plataformas similares cuestan $89/mes. Aquí son $19/mes, y empiezas con $1."
+- CIERRE DIRECTO (cuando el lead ya entendió el valor): "¿Qué te impide probarlo hoy por $1?"
+- CIERRE POR ALTERNATIVA: "¿Lo pruebas hoy mismo o prefieres que te muestre primero un video?"
 
 SOBRE TI MISMO:
 Cuando pregunten qué eres o cómo funciona → di que eres un agente IA de ventas, y que exactamente así funcionan los agentes que el cliente puede crear con Typebot Ilimitado. Eres la demostración viva del producto.
@@ -190,7 +198,6 @@ PRIORIDAD MÁXIMA: Convertir el lead. Cada respuesta debe acercarlo un paso más
     const taxa = ((parseInt(insights.total_conversions) / parseInt(insights.total_sessions)) * 100).toFixed(1);
     const avgConvertido = insights.avg_msgs_converted || 0;
     const avgAbandonado = insights.avg_msgs_abandoned || 0;
-    const maisDesconto = parseInt(insights.clicks_discount) > parseInt(insights.clicks_normal);
 
     prompt += `
 
@@ -198,8 +205,7 @@ INTELIGÊNCIA DE CONVERSÃO (dados reais das suas conversas):
 - Taxa de conversão atual: ${taxa}%
 - Leads que compram respondem em média ${avgConvertido} mensagens
 - Leads que abandonam ficam em média ${avgAbandonado} mensagens sem converter
-- Link mais clicado: ${maisDesconto ? 'DESCONTO ($19) — use-o estrategicamente' : 'NORMAL ($29) — leads aceitam o preço cheio'}
-- Se o lead ultrapassar ${Math.round(parseFloat(avgAbandonado) * 0.8)} mensagens sem avançar, mude de abordagem ou ofereça o desconto
+- Se o lead ultrapassar ${Math.round(parseFloat(avgAbandonado) * 0.8)} mensagens sem avançar, mude de abordagem: reforce que prueba todo por $1
 Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funcionando.`;
   }
 
@@ -300,9 +306,15 @@ app.get('/checkout/:tipo', async (req, res) => {
   const { tipo } = req.params;
   const { sessionId } = req.query;
 
+  /* normal e discount (links antigos no historico das conversas) vao pra
+     assinatura na Stripe. client_reference_id e o id do visitante que o
+     tb.js poe no link: volta no webhook da Stripe e liga a compra ao anuncio. */
+  const stripe = new URL(STRIPE_CHECKOUT_URL);
+  const ref = String(req.query.client_reference_id || '');
+  if (/^[A-Za-z0-9_-]{1,200}$/.test(ref)) stripe.searchParams.set('client_reference_id', ref);
   const links = {
-    normal: 'https://pay.hotmart.com/F103014542L?off=bjwg8x95&checkoutMode=10',
-    discount: 'https://pay.hotmart.com/F103014542L?off=1kehk6lh&checkoutMode=10',
+    normal: stripe.toString(),
+    discount: stripe.toString(),
     revenda: 'https://pay.hotmart.com/P103601719F?checkoutMode=10&bid=1767150906305'
   };
 
@@ -476,7 +488,7 @@ app.get('/dashboard', async (req, res) => {
 
     <div class="panel">
       <h2>💡 Dicas de Otimização</h2>
-      ${parseFloat(d.taxa_conversao) < 5 ? `<div class="tip"><strong>⚠️ Taxa de conversão baixa</strong>Ofereça o desconto de $19 mais cedo na conversa.</div>` : ''}
+      ${parseFloat(d.taxa_conversao) < 5 ? `<div class="tip"><strong>⚠️ Taxa de conversão baixa</strong>Reforce mais cedo o teste de $1 por 7 dias.</div>` : ''}
       ${parseFloat(d.media_mensagens) > 10 ? `<div class="tip"><strong>⏱️ Conversas longas</strong>Leads com mais de 10 mensagens raramente convertem. Acione o fechamento direto.</div>` : ''}
       ${parseInt(d.abandonos) > parseInt(d.total_sessoes) * 0.5 ? `<div class="tip"><strong>🚪 Alto abandono</strong>Mais de 50% abandona. Revise a mensagem de boas-vindas.</div>` : ''}
       <div class="tip"><strong>✅ Próximo passo</strong>Com mais de 50 sessões os insights de aprendizado automático ficam ainda mais precisos.</div>
