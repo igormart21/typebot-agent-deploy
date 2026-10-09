@@ -52,11 +52,14 @@ async function initDB() {
 // FUNÇÕES DE BANCO
 // ============================================================
 async function getHistory(sessionId) {
+  /* As MAIS RECENTES. Antes era ASC + LIMIT: pegava as 40 primeiras da
+     conversa pra sempre, e uma conversa longa nunca via o que acabou de
+     ser dito. */
   const result = await pool.query(
-    'SELECT role, content FROM messages WHERE session_id = $1 ORDER BY created_at ASC LIMIT $2',
+    'SELECT role, content FROM messages WHERE session_id = $1 ORDER BY created_at DESC LIMIT $2',
     [sessionId, MAX_HISTORY]
   );
-  return result.rows;
+  return result.rows.reverse();
 }
 
 async function saveMessage(sessionId, role, content) {
@@ -218,16 +221,23 @@ Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funci
 app.post('/agente', async (req, res) => {
   console.log('Incoming request to /agente:', JSON.stringify(req.body));
   try {
-    const { sessionId, mensagem } = req.body;
+    const { mensagem } = req.body;
+    const sessionId = String(req.body.sessionId || req.body.session_id || req.body.resultId || '').trim();
 
     if (!mensagem) {
       return res.status(400).json({ erro: 'mensagem é obrigatória' });
     }
 
-    const id = sessionId || 'preview-session';
+    /* Sem sessionId o bot nao disse de quem e a conversa. Antes isso caia
+       num 'preview-session' unico, e TODOS os visitantes dividiam o mesmo
+       historico (1.000 mensagens desde marco, com a oferta antiga). Agora a
+       mensagem e respondida sozinha, sem historico de ninguem. */
+    const temId = sessionId && !/^\{\{.*\}\}$/.test(sessionId);
+    if (!temId) console.warn('⚠️  /agente sem sessionId: respondendo sem historico. Configure {{resultId}} no Typebot.');
+    const id = temId ? sessionId : 'sem-session-id';
 
     // Busca histórico do banco
-    const historico = await getHistory(id);
+    const historico = temId ? await getHistory(id) : [];
 
     // Salva mensagem do usuário
     await saveMessage(id, 'user', mensagem);
@@ -270,7 +280,33 @@ app.post('/agente', async (req, res) => {
     }
 
     const data = await response.json();
-    const resposta = data.choices?.[0]?.message?.content;
+    let resposta = data.choices?.[0]?.message?.content;
+
+    /* Trava: a oferta antiga (pagamento unico/vitalicio/US$29) nao pode
+       sair. Se sair, refaz uma vez com a correcao explicita. */
+    const OFERTA_ANTIGA = /vital[ií]ci|pago [úu]nico|\$\s?29\b|29 ?usd/i;
+    if (resposta && OFERTA_ANTIGA.test(resposta)) {
+      console.warn('⚠️  resposta com a oferta antiga, refazendo');
+      try {
+        const r2 = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            max_tokens: 1000,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...historico,
+              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó pago único, acceso vitalicio o $29, que ya NO existen. Reescríbela: el precio es $1 por 7 días de prueba, después $19 al mes, cancelas cuando quieras.' }
+            ]
+          }),
+          signal: AbortSignal.timeout(20000)
+        });
+        const d2 = r2.ok ? await r2.json() : null;
+        const nova = d2?.choices?.[0]?.message?.content;
+        if (nova && !OFERTA_ANTIGA.test(nova)) resposta = nova;
+      } catch (e) { console.error('Erro ao refazer resposta:', e.message); }
+    }
 
     if (!resposta) {
       return res.status(500).json({ erro: 'Resposta vazia' });
