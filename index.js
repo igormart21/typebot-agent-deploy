@@ -17,7 +17,9 @@ const pool = new Pool({
 
 const BASE_URL = process.env.BASE_URL || 'https://typebot-agent-deploy-production.up.railway.app';
 // Assinatura na Stripe: US$1 por 7 dias, depois US$19/mes.
-const STRIPE_CHECKOUT_URL = process.env.STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/4gM3cv7eBfUcbyS3UB2Ji0a';
+/* Lead cria a conta no painel; ao entrar ja ve o cartao do plano ($1 + 7 dias)
+   e o checkout da Stripe sai ligado ao workspace dele. */
+const SIGNUP_URL = process.env.SIGNUP_URL || 'https://builder.chatcode.site/register';
 const MAX_HISTORY = 40;
 
 async function initDB() {
@@ -117,7 +119,7 @@ PRODUCTO - TYPEBOT ILIMITADO (SUSCRIPCIÓN):
 - Plataforma online en la nube (NO es un curso)
 - PRECIO: $1 USD por 7 días de prueba con acceso completo. Después, $19 USD al mes.
 - Cancela cuando quiera, en 1 clic. Si cancela dentro de los 7 días, no se le cobran los $19.
-- Pago con tarjeta, checkout seguro de Stripe
+- Cómo comprar: crea su cuenta en el link (solo email), y al entrar ve el plan para activar la prueba por $1 con tarjeta en el checkout seguro de Stripe
 - Bots ilimitados, sin restricciones, mientras la suscripción esté activa
 - Funciona 24/7, sin PC encendido
 - Sin programación, desde PC o celular
@@ -342,15 +344,11 @@ app.get('/checkout/:tipo', async (req, res) => {
   const { tipo } = req.params;
   const { sessionId } = req.query;
 
-  /* normal e discount (links antigos no historico das conversas) vao pra
-     assinatura na Stripe. client_reference_id e o id do visitante que o
-     tb.js poe no link: volta no webhook da Stripe e liga a compra ao anuncio. */
-  const stripe = new URL(STRIPE_CHECKOUT_URL);
-  const ref = String(req.query.client_reference_id || '');
-  if (/^[A-Za-z0-9_-]{1,200}$/.test(ref)) stripe.searchParams.set('client_reference_id', ref);
+  /* normal e discount (links antigos no historico das conversas) vao pro
+     cadastro no painel; a assinatura e feita la dentro. */
   const links = {
-    normal: stripe.toString(),
-    discount: stripe.toString(),
+    normal: SIGNUP_URL,
+    discount: SIGNUP_URL,
     revenda: 'https://pay.hotmart.com/P103601719F?checkoutMode=10&bid=1767150906305'
   };
 
