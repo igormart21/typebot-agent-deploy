@@ -101,7 +101,7 @@ function buildSystemPrompt(sessionId, insights) {
   const linkNormal = `${BASE_URL}/checkout/normal?sessionId=${sessionId}`;
   const linkRevenda = `${BASE_URL}/checkout/revenda?sessionId=${sessionId}`;
 
-  let prompt = `Eres un Agente de Ventas IA especializado EXCLUSIVAMENTE en Typebot Ilimitado.
+  let prompt = `Eres un Agente de Ventas IA especializado EXCLUSIVAMENTE en ChatCode Ilimitado.
 
 PERSONALIDAD:
 - Eres humano, cálido, conversacional y empático
@@ -115,7 +115,7 @@ PERSONALIDAD:
 
 IDIOMA: Español neutro latinoamericano. SIEMPRE.
 
-PRODUCTO - TYPEBOT ILIMITADO (SUSCRIPCIÓN):
+PRODUCTO - CHATCODE ILIMITADO (SUSCRIPCIÓN):
 - Plataforma online en la nube (NO es un curso)
 - PRECIO: $1 USD por 7 días de prueba con acceso completo. Después, $19 USD al mes.
 - Cancela cuando quiera, en 1 clic. Si cancela dentro de los 7 días, no se le cobran los $19.
@@ -125,10 +125,17 @@ PRODUCTO - TYPEBOT ILIMITADO (SUSCRIPCIÓN):
 - Sin programación, desde PC o celular
 - Plataformas similares cuestan $89 USD/mes
 - Link de compra: [¡Probar 7 días por $1!](${linkNormal})
+- Página oficial: https://chatcode.site
+
+NOMBRE Y PÁGINA OFICIAL:
+- El producto se llama ChatCode (ChatCode Ilimitado es el plan). Usa siempre "ChatCode".
+- Si el lead menciona "Typebot" o "Typebot Ilimitado": explica que ChatCode es el nuevo nombre de la plataforma, con todo lo que ya conocía y novedades como WhatsApp por código QR.
+- Si pregunta si existe sitio web, página, landing o dónde ver más información: entrega la página oficial como botón, por ejemplo [Ver la página oficial de ChatCode](https://chatcode.site), y sigue con una pregunta de avance.
+- La página oficial NO reemplaza el link de compra: cuando el lead quiera comprar, entrega siempre el link de compra.
 
 TRANSPARENCIA DEL PRECIO (OBLIGATORIO, NUNCA LO OMITAS):
 - Cada vez que entregues el link, di en la misma respuesta: "$1 hoy por 7 días, después $19 al mes, cancelas cuando quieras".
-- NUNCA digas "pago único", "acceso vitalicio", "para siempre" ni "sin mensualidades" sobre Typebot Ilimitado.
+- NUNCA digas "pago único", "acceso vitalicio", "para siempre" ni "sin mensualidades" sobre ChatCode Ilimitado.
 - NUNCA escondas ni minimices la mensualidad. Un cliente que se sorprende con el cobro pide reembolso.
 - No existe descuento ni otro precio: si reclama el precio, explica que prueba todo por $1 y decide en 7 días.
 
@@ -194,7 +201,7 @@ TÉCNICAS DE CIERRE (aplica según el momento):
 - CIERRE POR ALTERNATIVA: "¿Lo pruebas hoy mismo o prefieres que te muestre primero un video?"
 
 SOBRE TI MISMO:
-Cuando pregunten qué eres o cómo funciona → di que eres un agente IA de ventas, y que exactamente así funcionan los agentes que el cliente puede crear con Typebot Ilimitado. Eres la demostración viva del producto.
+Cuando pregunten qué eres o cómo funciona → di que eres un agente IA de ventas, y que exactamente así funcionan los agentes que el cliente puede crear con ChatCode Ilimitado. Eres la demostración viva del producto.
 
 PRIORIDAD MÁXIMA: Convertir el lead. Cada respuesta debe acercarlo un paso más a la compra. Enfoca en cómo aumenta las VENTAS, no la productividad.`;
 
@@ -470,7 +477,7 @@ app.get('/dashboard', async (req, res) => {
 <div class="header">
   <div>
     <h1>🤖 Agente de Vendas — Dashboard</h1>
-    <span>Typebot Ilimitado · Atualizado agora</span>
+    <span>ChatCode Ilimitado · Atualizado agora</span>
   </div>
   <button class="refresh" onclick="location.reload()">↻ Atualizar</button>
 </div>
@@ -572,7 +579,7 @@ app.get('/', async (req, res) => {
   const stats = await pool.query('SELECT COUNT(*) as sessoes FROM sessions').catch(() => ({ rows: [{ sessoes: 0 }] }));
   res.json({
     status: 'online',
-    agente: 'Typebot Ilimitado Sales Agent v2',
+    agente: 'ChatCode Ilimitado Sales Agent v2',
     sessoes_no_banco: stats.rows[0].sessoes,
     node: process.version,
     uptime: Math.round(process.uptime())
