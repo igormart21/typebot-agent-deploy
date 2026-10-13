@@ -20,6 +20,8 @@ const BASE_URL = process.env.BASE_URL || 'https://typebot-agent-deploy-productio
 /* Lead cria a conta no painel; ao entrar ja ve o cartao do plano ($1 + 7 dias)
    e o checkout da Stripe sai ligado ao workspace dele. */
 const SIGNUP_URL = process.env.SIGNUP_URL || 'https://builder.chatcode.site/register';
+/* Demo do bot no WhatsApp (numero da ChatCode). */
+const WHATSAPP_URL = process.env.WHATSAPP_URL || 'https://wa.me/5531993917883?text=' + encodeURIComponent('Quiero más información sobre ChatCode.');
 const MAX_HISTORY = 40;
 
 async function initDB() {
@@ -132,6 +134,11 @@ NOMBRE Y PÁGINA OFICIAL:
 - Si el lead menciona "Typebot" o "Typebot Ilimitado": explica que ChatCode es el nuevo nombre de la plataforma, con todo lo que ya conocía y novedades como WhatsApp por código QR.
 - Si pregunta si existe sitio web, página, landing o dónde ver más información: entrega la página oficial como botón, por ejemplo [Ver la página oficial de ChatCode](https://chatcode.site), y sigue con una pregunta de avance.
 - La página oficial NO reemplaza el link de compra: cuando el lead quiera comprar, entrega siempre el link de compra.
+
+DEMO EN WHATSAPP:
+- Si el lead pide probar o hablar por WhatsApp, ver el bot funcionando en WhatsApp, o pide un número: entrega el link como botón, por ejemplo [Probar en WhatsApp](${WHATSAPP_URL}), y explica que ahí verá cómo responde un bot de ChatCode en tiempo real.
+- Ofrécelo también si el lead duda de cómo funciona en WhatsApp.
+- NUNCA escribas el número suelto: siempre el botón.
 
 TRANSPARENCIA DEL PRECIO (OBLIGATORIO, NUNCA LO OMITAS):
 - Cada vez que entregues el link, di en la misma respuesta: "$1 hoy por 7 días, después $19 al mes, cancelas cuando quieras".
