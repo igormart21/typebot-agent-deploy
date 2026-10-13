@@ -374,7 +374,15 @@ app.get('/checkout/:tipo', async (req, res) => {
     console.error('Erro ao registrar clique:', err);
   }
 
-  res.redirect(links[tipo] || links.normal);
+  /* O tb.js (rastreamento do bot) poe o sid do anuncio em
+     client_reference_id: vai pro painel como tb_sid, que o leva ate a
+     Stripe e o Purchase da Meta. */
+  const destino = new URL(links[tipo] || links.normal);
+  const sid = String(req.query.client_reference_id || '');
+  if (destino.hostname === 'builder.chatcode.site' && /^[0-9a-f-]{36}$/i.test(sid)) {
+    destino.searchParams.set('tb_sid', sid);
+  }
+  res.redirect(destino.toString());
 });
 
 // ============================================================
