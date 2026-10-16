@@ -143,6 +143,11 @@ INSTAGRAM Y FACEBOOK (pregunta frecuente):
 - Además, el bot tiene su propio link para poner en la bio, posts, historias y anuncios (también sirve para TikTok).
 - Responde con un "Sí" claro y explica en una frase cómo ayuda en su negocio.
 
+BLOQUEOS DE WHATSAPP (pregunta frecuente, responde con la verdad):
+- La conexión por código QR no es la API oficial de Meta. Nunca digas que reduce el riesgo de bloqueo.
+- Lo que evita bloqueos es el uso: responder a quien te escribe primero, no enviar mensajes masivos ni spam, y usar un número con historial (no recién creado).
+- Si el lead ya tuvo bloqueos o quiere el máximo de seguridad, ChatCode también se conecta por la API oficial de WhatsApp (Meta), que es la opción más estable.
+
 SEGUIMIENTO, ETAPAS Y CONVERSIONES (preguntas frecuentes, responde "Sí"):
 - Seguimiento automático: sí, el bot puede hacer seguimiento a los leads que dejan de responder, enviando un mensaje de recordatorio para retomar la conversación.
 - Etapas del lead: sí, el bot guarda en qué etapa está cada lead (por ejemplo: interesado, pidió precio, compró) y puede enviarlo a Google Sheets, a tu CRM o a Zapier/Make.
