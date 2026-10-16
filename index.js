@@ -143,7 +143,13 @@ INSTAGRAM Y FACEBOOK (pregunta frecuente):
 - Además, el bot tiene su propio link para poner en la bio, posts, historias y anuncios (también sirve para TikTok).
 - Responde con un "Sí" claro y explica en una frase cómo ayuda en su negocio.
 
-NO PROMETAS (no existe hoy): envíos masivos, entender los audios que manda el cliente, seguimiento automático de pagos pendientes, tutoriales o cursos incluidos, emails de aviso antes del cobro. Si preguntan por algo de esto, dilo con honestidad y ofrece la alternativa que sí existe.
+SEGUIMIENTO, ETAPAS Y CONVERSIONES (preguntas frecuentes, responde "Sí"):
+- Seguimiento automático: sí, el bot puede hacer seguimiento a los leads que dejan de responder, enviando un mensaje de recordatorio para retomar la conversación.
+- Etapas del lead: sí, el bot guarda en qué etapa está cada lead (por ejemplo: interesado, pidió precio, compró) y puede enviarlo a Google Sheets, a tu CRM o a Zapier/Make.
+- Conversión de venta a Meta: sí, el bot puede enviar los eventos de lead y venta al píxel y a la API de conversiones de Meta, para optimizar tus anuncios.
+- Tú (este agente) sí entiendes audios, imágenes y PDFs que te mande el lead: si te llega uno, respóndelo con normalidad.
+
+NO PROMETAS (no existe hoy): envíos masivos, tutoriales o cursos incluidos, emails de aviso antes del cobro. Si preguntan por algo de esto, dilo con honestidad y ofrece la alternativa que sí existe.
 
 PRECIO, CON TRANSPARENCIA:
 - OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di siempre las dos partes del precio: "US$1 hoy por 7 días, después US$19/mes, cancelas cuando quieras". Nunca menciones solo los US$1. Después no lo repitas en cada mensaje.
@@ -181,6 +187,80 @@ Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funci
 }
 
 // ============================================================
+// MIDIA DO WHATSAPP (audio, imagem, PDF)
+// ============================================================
+/* A Evolution manda midia pro bot como "imageMessage|<id>". Com a URL e a
+   chave da Evolution (variaveis no Railway) e o nome da instancia (no body
+   do Typebot), baixamos o arquivo e a IA entende: imagem e PDF vao direto
+   pro gpt-4o; audio vira texto pelo Whisper. Sem isso, o agente so pede
+   pra pessoa escrever. */
+const MIDIA_RE = /^(imageMessage|documentMessage|documentWithCaptionMessage|audioMessage|videoMessage|stickerMessage)\|([A-Za-z0-9]+)$/;
+const NOME_MIDIA = { imageMessage: 'una imagen', documentMessage: 'un documento', documentWithCaptionMessage: 'un documento', audioMessage: 'un audio', videoMessage: 'un video', stickerMessage: 'un sticker' };
+
+async function baixarMidia(instancia, id) {
+  const url = process.env.EVOLUTION_API_URL, key = process.env.EVOLUTION_API_KEY;
+  if (!url || !key || !instancia) return null;
+  const r = await fetch(`${url}/chat/getBase64FromMediaMessage/${instancia}`, {
+    method: 'POST',
+    headers: { apikey: key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: { key: { id } }, convertToMp4: false })
+  });
+  if (!r.ok) return null;
+  const d = await r.json().catch(() => null);
+  return d && d.base64 ? { base64: d.base64, mimetype: d.mimetype || '', fileName: d.fileName || 'archivo' } : null;
+}
+
+async function transcrever(midia) {
+  const form = new FormData();
+  const ext = (midia.mimetype.split('/')[1] || 'ogg').split(';')[0];
+  form.append('file', new Blob([Buffer.from(midia.base64, 'base64')], { type: midia.mimetype || 'audio/ogg' }), `audio.${ext}`);
+  form.append('model', 'whisper-1');
+  const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST', headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: form
+  });
+  const d = await r.json().catch(() => ({}));
+  return d.text || null;
+}
+
+/* Devolve { texto, conteudo }: texto pra guardar no historico e conteudo
+   (string ou partes com imagem/arquivo) pra mandar a IA nesta mensagem. */
+async function interpretarMensagem(mensagem, instancia) {
+  const m = MIDIA_RE.exec(String(mensagem).trim());
+  if (!m) return { texto: mensagem, conteudo: mensagem };
+  const [, tipo, id] = m;
+  const nome = NOME_MIDIA[tipo];
+  try {
+    const midia = await baixarMidia(instancia, id);
+    if (midia && tipo === 'audioMessage') {
+      const t = await transcrever(midia);
+      if (t) return { texto: `[audio] ${t}`, conteudo: `(El cliente envió un audio. Transcripción:) ${t}` };
+    }
+    if (midia && (tipo === 'imageMessage' || tipo === 'stickerMessage') && midia.mimetype.startsWith('image/')) {
+      return {
+        texto: `[${nome}]`,
+        conteudo: [
+          { type: 'text', text: 'El cliente envió esta imagen. Entiéndela y responde en el contexto de la conversación.' },
+          { type: 'image_url', image_url: { url: `data:${midia.mimetype};base64,${midia.base64}` } }
+        ]
+      };
+    }
+    if (midia && tipo.startsWith('document') && midia.mimetype === 'application/pdf') {
+      return {
+        texto: `[PDF: ${midia.fileName}]`,
+        conteudo: [
+          { type: 'text', text: 'El cliente envió este PDF. Léelo y responde en el contexto de la conversación.' },
+          { type: 'file', file: { filename: midia.fileName.endsWith('.pdf') ? midia.fileName : `${midia.fileName}.pdf`, file_data: `data:application/pdf;base64,${midia.base64}` } }
+        ]
+      };
+    }
+  } catch (err) {
+    console.error('Erro ao ler midia:', err.message);
+  }
+  const aviso = `(El cliente envió ${nome} que no se pudo abrir. Pídele con amabilidad que te lo escriba en texto.)`;
+  return { texto: `[${nome}]`, conteudo: aviso };
+}
+
+// ============================================================
 // ROTA PRINCIPAL - Webhook do Typebot
 // ============================================================
 app.post('/agente', async (req, res) => {
@@ -205,8 +285,9 @@ app.post('/agente', async (req, res) => {
     const historico = temId ? await getHistory(id) : [];
 
     // Salva mensagem do usuário
-    await saveMessage(id, 'user', mensagem);
-    historico.push({ role: 'user', content: mensagem });
+    const entrada = await interpretarMensagem(mensagem, String(req.body.instancia || ''));
+    await saveMessage(id, 'user', entrada.texto);
+    historico.push({ role: 'user', content: entrada.conteudo });
 
     // Busca insights para enriquecer o prompt
     const insights = await getInsights();
