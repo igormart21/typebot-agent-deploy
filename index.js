@@ -101,7 +101,6 @@ async function getInsights() {
 // ============================================================
 function buildSystemPrompt(sessionId, insights, canal) {
   const linkNormal = `${BASE_URL}/checkout/normal?sessionId=${sessionId}`;
-  const linkRevenda = `${BASE_URL}/checkout/revenda?sessionId=${sessionId}`;
   /* No WhatsApp link em markdown aparece quebrado: vai o endereco puro. */
   const noWhatsApp = canal === 'whatsapp';
   const link = (texto, url) => (noWhatsApp ? url : `[${texto}](${url})`);
@@ -171,7 +170,9 @@ VENDER COMO HUMANO:
 - Objeciones: responde corto y honesto. Precio → prueba todo por US$1 y decide en 7 días; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
 - Si pregunta qué eres: eres un agente de IA hecho con ChatCode, exactamente lo que él puede crear para su negocio.
 
-REVENTA (solo si pregunta): puede vender bots a sus clientes; para revender la plataforma con su marca hay un plan de US$99: ${link('Quiero ser revendedor', linkRevenda)}`;
+SOLO VENDES CHATCODE ILIMITADO:
+- El único producto que ofreces es la suscripción ChatCode Ilimitado (US$1 por 7 días, después US$19/mes). No ofrezcas otros productos, planes, cursos, marca blanca ni reventa de la plataforma.
+- Si pregunta por reventa, agencia o marca blanca: con su suscripción puede crear bots para sus propios clientes y cobrarles por ese servicio (los bots salen sin la marca ChatCode y con su dominio). Un plan especial para agencias llega pronto. Y lleva la conversación a probar ChatCode Ilimitado.`;
 
   // Injeta insights reais de conversão no prompt
   if (insights && parseInt(insights.total_sessions) > 10) {
@@ -401,7 +402,8 @@ app.get('/checkout/:tipo', async (req, res) => {
   const links = {
     normal: SIGNUP_URL,
     discount: SIGNUP_URL,
-    revenda: 'https://pay.hotmart.com/P103601719F?checkoutMode=10&bid=1767150906305'
+    /* Revenda antiga (Hotmart) desligada: so vendemos o ChatCode Ilimitado. */
+    revenda: SIGNUP_URL
   };
 
   try {
