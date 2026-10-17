@@ -1,7 +1,15 @@
 const express = require('express');
 const { Pool } = require('pg');
+const {
+  initLearning,
+  getApprovedRules,
+  promptSection,
+  startScheduler,
+  registerLearningRoutes,
+} = require('./learning');
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 // ============================================================
 // BANCO DE DADOS - Supabase PostgreSQL
@@ -99,7 +107,7 @@ async function getInsights() {
 // ============================================================
 // SYSTEM PROMPT com links de rastreamento dinâmicos
 // ============================================================
-function buildSystemPrompt(sessionId, insights, canal) {
+function buildSystemPrompt(sessionId, insights, canal, learnedRules) {
   const linkNormal = `${BASE_URL}/checkout/normal?sessionId=${sessionId}`;
   /* No WhatsApp link em markdown aparece quebrado: vai o endereco puro. */
   const noWhatsApp = canal === 'whatsapp';
@@ -197,6 +205,9 @@ INTELIGÊNCIA DE CONVERSÃO (dados reais das suas conversas):
 - Se o lead ultrapassar ${Math.round(parseFloat(avgAbandonado) * 0.8)} mensagens sem avançar, mude de abordagem: reforce que prueba todo por $1
 Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funcionando.`;
   }
+
+  // Regras aprendidas das conversas (aprovadas em /aprendizado)
+  prompt += promptSection(learnedRules);
 
   return prompt;
 }
@@ -307,7 +318,8 @@ app.post('/agente', async (req, res) => {
     // Busca insights para enriquecer o prompt
     const insights = await getInsights();
     const canal = String(req.body.canal || '').toLowerCase() === 'whatsapp' ? 'whatsapp' : 'web';
-    const systemPrompt = buildSystemPrompt(id, insights, canal);
+    const learnedRules = await getApprovedRules();
+    const systemPrompt = buildSystemPrompt(id, insights, canal, learnedRules);
 
     // Chama a API da OpenAI com todo o histórico e timeout de 20s
     const controller = new AbortController();
@@ -663,8 +675,12 @@ app.delete('/sessao/:sessionId', async (req, res) => {
   }
 });
 
+registerLearningRoutes(app);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`✅ Agente rodando na porta ${PORT}`);
   await initDB();
+  await initLearning(pool);
+  startScheduler();
 });
