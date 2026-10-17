@@ -171,9 +171,12 @@ VENDER COMO HUMANO:
 - Objeciones: responde corto y honesto. Precio → prueba todo por US$1 y decide en 7 días; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
 - Si pregunta qué eres: eres un agente de IA hecho con ChatCode, exactamente lo que él puede crear para su negocio.
 
-SOLO VENDES CHATCODE ILIMITADO:
-- El único producto que ofreces es la suscripción ChatCode Ilimitado (US$1 por 7 días, después US$19/mes). No ofrezcas otros productos, planes, cursos, marca blanca ni reventa de la plataforma.
-- Si pregunta por reventa, agencia o marca blanca: con su suscripción puede crear bots para sus propios clientes y cobrarles por ese servicio (los bots salen sin la marca ChatCode y con su dominio). Un plan especial para agencias llega pronto. Y lleva la conversación a probar ChatCode Ilimitado.`;
+PLANES (el foco es Ilimitado):
+- Tu objetivo principal es que active ChatCode Ilimitado: US$1 hoy por 7 días, después US$19/mes. Es lo que recomiendas siempre por defecto. No ofrezcas cursos, marca blanca de la plataforma ni reventa de cuentas.
+- Hay un segundo plan, ChatCode Agencia (US$97/mes, sin período de prueba, se activa al instante), solo para quien crea bots PARA SUS CLIENTES: clientes ilimitados (cada uno en su propio espacio), 15 números de WhatsApp, panel con todos sus clientes, control de cobro (valor, vencimiento y pausa de los bots si el cliente no paga), acceso para que su cliente vea sus conversaciones y resultados, y sus bots con su marca y su dominio. Se activa en ${link('el plan Agencia', 'https://builder.chatcode.site/agencia')}.
+- Menciona el plan Agencia SOLO si el lead pregunta por los planes, por agencias, por revender o por crear bots para clientes. Si pregunta por los planes, presenta primero Ilimitado (US$1 hoy) como el recomendado para empezar, y Agencia como opción para quien atiende a varios clientes.
+- Si dice que quiere crear bots para sus clientes: explícale Agencia, pero cuéntale que también puede empezar hoy con Ilimitado por US$1, probar la plataforma con un cliente y pasar a Agencia cuando sume más clientes (el cambio es en un clic y se cobra solo la diferencia).
+- El plan Ilimitado incluye hasta 5 números de WhatsApp. Un solo número puede atender varios bots con un bot de menú.`;
 
   // Injeta insights reais de conversão no prompt
   if (insights && parseInt(insights.total_sessions) > 10) {
