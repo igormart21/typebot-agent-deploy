@@ -7,6 +7,12 @@ const {
   startScheduler,
   registerLearningRoutes,
 } = require('./learning');
+const {
+  EMAIL_RE,
+  lookupCustomer,
+  buildSupportPrompt,
+  salesCustomerSection,
+} = require('./support');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -49,6 +55,11 @@ async function initDB() {
       content TEXT NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    ALTER TABLE sessions ADD COLUMN IF NOT EXISTS customer_email TEXT;
+    ALTER TABLE sessions ADD COLUMN IF NOT EXISTS customer_plan TEXT;
+    ALTER TABLE sessions ADD COLUMN IF NOT EXISTS customer_name TEXT;
+    ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_customer BOOLEAN DEFAULT FALSE;
 
     CREATE TABLE IF NOT EXISTS link_clicks (
       id SERIAL PRIMARY KEY,
@@ -179,9 +190,8 @@ VENDER COMO HUMANO:
 - Objeciones: responde corto y honesto. Precio → prueba todo por US$1 y decide en 7 días; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
 - Si pregunta qué eres: eres un agente de IA hecho con ChatCode, exactamente lo que él puede crear para su negocio.
 
-ACCESO Y USO DE LA PLATAFORMA (muy importante):
-- Si preguntan cómo acceder, entrar, usar, entrenar, configurar o editar su bot, o cualquier duda de uso del panel: responde corto que todo se hace desde la plataforma ChatCode y envía ${link('chatcode.site', 'https://chatcode.site')} (ahí está el botón para entrar o crear la cuenta). No expliques paso a paso cómo usar el panel ni inventes menús o botones.
-- Si ya es cliente y tiene un problema técnico, además del link indica el soporte: support@chatcode.site.
+ACCESO Y USO DE LA PLATAFORMA:
+- Si alguien que todavía no es cliente pregunta cómo se usa, cómo se entrena o cómo se configura el bot: responde corto que todo se hace de forma visual desde la plataforma (${link('chatcode.site', 'https://chatcode.site')}) y que, al activar su plan, le ayudamos paso a paso. No expliques el panel en detalle ni inventes menús o botones.
 
 PLANES (el foco es Ilimitado):
 - Tu objetivo principal es que active ChatCode Ilimitado: US$1 hoy por 7 días, después US$19/mes. Es lo que recomiendas siempre por defecto. No ofrezcas cursos, marca blanca de la plataforma ni reventa de cuentas.
@@ -318,8 +328,36 @@ app.post('/agente', async (req, res) => {
     // Busca insights para enriquecer o prompt
     const insights = await getInsights();
     const canal = String(req.body.canal || '').toLowerCase() === 'whatsapp' ? 'whatsapp' : 'web';
+    /* Cliente ou lead? Se a mensagem traz um e-mail, confere no painel; o
+       resultado fica na sessao. Cliente verificado = modo suporte. */
+    let customer = temId
+      ? (await pool.query(
+          'SELECT customer_email, customer_plan, customer_name, is_customer FROM sessions WHERE id = $1',
+          [id]
+        ).catch(() => ({ rows: [] }))).rows[0] || null
+      : null;
+    const emailMatch = temId ? String(entrada.texto || '').match(EMAIL_RE) : null;
+    if (emailMatch) {
+      const email = emailMatch[0].toLowerCase();
+      const info = await lookupCustomer(email);
+      if (info) {
+        customer = {
+          customer_email: email,
+          customer_plan: info.found ? info.plan : null,
+          customer_name: info.name || null,
+          is_customer: Boolean(info.isSubscriber),
+        };
+        await pool.query(
+          'UPDATE sessions SET customer_email = $2, customer_plan = $3, customer_name = $4, is_customer = $5 WHERE id = $1',
+          [id, customer.customer_email, customer.customer_plan, customer.customer_name, customer.is_customer]
+        ).catch(() => {});
+      }
+    }
+    const isSupport = Boolean(customer?.is_customer);
     const learnedRules = await getApprovedRules();
-    const systemPrompt = buildSystemPrompt(id, insights, canal, learnedRules);
+    const systemPrompt = isSupport
+      ? buildSupportPrompt(customer, canal)
+      : buildSystemPrompt(id, insights, canal, learnedRules) + salesCustomerSection(customer);
 
     // Chama a API da OpenAI com todo o histórico e timeout de 20s
     const controller = new AbortController();
@@ -335,7 +373,7 @@ app.post('/agente', async (req, res) => {
         },
         body: JSON.stringify({
           model: 'gpt-4o',
-          max_tokens: 350,
+          max_tokens: isSupport ? 700 : 350,
           temperature: 0.8,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -368,7 +406,7 @@ app.post('/agente', async (req, res) => {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
           body: JSON.stringify({
             model: 'gpt-4o',
-            max_tokens: 350,
+            max_tokens: isSupport ? 700 : 350,
             messages: [
               { role: 'system', content: systemPrompt },
               ...historico,
