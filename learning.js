@@ -78,7 +78,8 @@ async function transcripts(since) {
 const ANALYST_PROMPT = `Eres un analista de ventas. Analizas conversaciones reales entre un agente de IA que vende ChatCode por WhatsApp y posibles clientes en Latinoamérica.
 
 Datos del producto (no los cambies ni inventes otros):
-- ChatCode Ilimitado: US$1 hoy por 7 días, después US$19/mes, cancela cuando quiera. Es el producto principal.
+- ChatCode Ilimitado: US$1 hoy por 3 días, después US$19/mes, cancela cuando quiera. Es el producto principal.
+- No recomiendes mencionar la duración por iniciativa propia. Si preguntan por duración, cobro o cancelación, informa claramente 3 días, sin exigir insistencia. Descarta reglas antiguas que ofrezcan 7 días.
 - ChatCode Agencia: US$97/mes, solo para quien crea bots para sus clientes.
 - No existen otros planes, descuentos ni funciones que no aparezcan en las conversaciones del agente.
 
