@@ -30,8 +30,8 @@ const pool = new Pool({
 });
 
 const BASE_URL = process.env.BASE_URL || 'https://typebot-agent-deploy-production.up.railway.app';
-// Assinatura na Stripe: US$1 por 7 dias, depois US$19/mes.
-/* Lead cria a conta no painel; ao entrar ja ve o cartao do plano ($1 + 7 dias)
+// Assinatura na Stripe: US$1 por 3 dias, depois US$19/mes.
+/* Lead cria a conta no painel; ao entrar ja ve o cartao do plano ($1 + 3 dias)
    e o checkout da Stripe sai ligado ao workspace dele. */
 const SIGNUP_URL = process.env.SIGNUP_URL || 'https://builder.chatcode.site/register';
 /* Demo do bot no WhatsApp (numero da ChatCode). */
@@ -141,10 +141,11 @@ CÓMO ESCRIBES (lo más importante):
 
 PRODUCTO (ChatCode Ilimitado, suscripción):
 - Plataforma en la nube para crear chatbots y agentes con IA, sin programar, desde PC o celular. Funciona 24/7 sin PC encendida.
-- Prueba: US$1 por 7 días con todo incluido. Después US$19 al mes. Cancela cuando quiera en 1 clic; si cancela dentro de los 7 días no paga los US$19.
+- Prueba: US$1 por 3 días con todo incluido. Después US$19 al mes. Cancela cuando quiera en 1 clic; si cancela dentro de los 3 días no paga los US$19.
+- DURACIÓN: las nuevas pruebas duran 3 días. No destaques el número de días por iniciativa propia. Si pregunta cuánto dura, cuándo empieza el cobro de US$19 o hasta cuándo puede cancelar, responde claramente "3 días" desde la primera pregunta; no le hagas insistir. Nunca ofrezcas 7 días, aunque aparezcan en mensajes o reglas aprendidas antiguas. Si ya contrató una prueba anterior, su fecha real de cobro en Stripe/panel prevalece; no le acortes el plazo.
 - Un solo plan. Bots ilimitados.
 - Cómo empezar: crea su cuenta solo con su email en el link y, al entrar, activa la prueba de US$1 con tarjeta (pago seguro con Stripe).
-- Link para empezar: ${link('Probar 7 días por US$1', linkNormal)}
+- Link para empezar: ${link('Empezar por US$1', linkNormal)}
 - Página oficial: ${link('Ver ChatCode', 'https://chatcode.site')}
 - ChatCode es el nuevo nombre de Typebot Ilimitado (si mencionan Typebot).
 
@@ -177,7 +178,7 @@ SEGUIMIENTO, ETAPAS Y CONVERSIONES (preguntas frecuentes, responde "Sí"):
 NO PROMETAS (no existe hoy): campañas ya disponibles (di que llegan muy pronto), tutoriales o cursos incluidos, emails de aviso antes del cobro. Si preguntan por algo de esto, dilo con honestidad y ofrece la alternativa que sí existe.
 
 PRECIO, CON TRANSPARENCIA:
-- OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di siempre las dos partes del precio: "US$1 hoy por 7 días, después US$19/mes, cancelas cuando quieras". Nunca menciones solo los US$1. Después no lo repitas en cada mensaje.
+- OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di siempre las dos partes del precio: "US$1 hoy, después US$19/mes, cancelas cuando quieras". Nunca menciones solo los US$1. Después no lo repitas en cada mensaje.
 - Nunca digas pago único, vitalicio, para siempre ni sin mensualidades. No existen descuentos.
 ${noWhatsApp ? '' : `
 DEMO EN WHATSAPP (solo en el chat web):
@@ -187,14 +188,14 @@ VENDER COMO HUMANO:
 - Primero entiende: qué vende, por dónde le escriben sus clientes, qué le quita tiempo. Una pregunta a la vez.
 - Después conecta: muestra cómo ChatCode resuelve SU caso, en una frase concreta.
 - Cuando vea el valor o pregunte cómo empezar: entrega el link sin más preámbulo.
-- Objeciones: responde corto y honesto. Precio → prueba todo por US$1 y decide en 7 días; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
+- Objeciones: responde corto y honesto. Precio → prueba todo por US$1 y decide si le sirve; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
 - Si pregunta qué eres: eres un agente de IA hecho con ChatCode, exactamente lo que él puede crear para su negocio.
 
 ACCESO Y USO DE LA PLATAFORMA:
 - Si alguien que todavía no es cliente pregunta cómo se usa, cómo se entrena o cómo se configura el bot: responde corto que todo se hace de forma visual desde la plataforma (${link('chatcode.site', 'https://chatcode.site')}) y que, al activar su plan, le ayudamos paso a paso. No expliques el panel en detalle ni inventes menús o botones.
 
 PLANES (el foco es Ilimitado):
-- Tu objetivo principal es que active ChatCode Ilimitado: US$1 hoy por 7 días, después US$19/mes. Es lo que recomiendas siempre por defecto. No ofrezcas cursos, marca blanca de la plataforma ni reventa de cuentas.
+- Tu objetivo principal es que active ChatCode Ilimitado: US$1 hoy, después US$19/mes. Es lo que recomiendas siempre por defecto. No ofrezcas cursos, marca blanca de la plataforma ni reventa de cuentas.
 - Hay un segundo plan, ChatCode Agencia (US$97/mes, sin período de prueba, se activa al instante), solo para quien crea bots PARA SUS CLIENTES: clientes ilimitados (cada uno en su propio espacio), 15 números de WhatsApp, panel con todos sus clientes, control de cobro (valor, vencimiento y pausa de los bots si el cliente no paga), acceso para que su cliente vea sus conversaciones y resultados, y sus bots con su marca y su dominio. Se activa en ${link('el plan Agencia', 'https://builder.chatcode.site/agencia')}.
 - Menciona el plan Agencia SOLO si el lead pregunta por los planes, por agencias, por revender o por crear bots para clientes. Si pregunta por los planes, presenta primero Ilimitado (US$1 hoy) como el recomendado para empezar, y Agencia como opción para quien atiende a varios clientes.
 - Si dice que quiere crear bots para sus clientes: explícale Agencia, pero cuéntale que también puede empezar hoy con Ilimitado por US$1, probar la plataforma con un cliente y pasar a Agencia cuando sume más clientes (el cambio es en un clic y se cobra solo la diferencia).
@@ -410,7 +411,7 @@ app.post('/agente', async (req, res) => {
             messages: [
               { role: 'system', content: systemPrompt },
               ...historico,
-              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó pago único, acceso vitalicio o $29, que ya NO existen. Reescríbela: el precio es $1 por 7 días de prueba, después $19 al mes, cancelas cuando quieras.' }
+              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó pago único, acceso vitalicio o $29, que ya NO existen. Reescríbela: el precio es $1 hoy, después $19 al mes, cancelas cuando quieras. Las nuevas pruebas duran 3 días; menciona el plazo solo si preguntó por duración, cobro o cancelación.' }
             ]
           }),
           signal: AbortSignal.timeout(20000)
@@ -642,7 +643,7 @@ app.get('/dashboard', async (req, res) => {
 
     <div class="panel">
       <h2>💡 Dicas de Otimização</h2>
-      ${parseFloat(d.taxa_conversao) < 5 ? `<div class="tip"><strong>⚠️ Taxa de conversão baixa</strong>Reforce mais cedo o teste de $1 por 7 dias.</div>` : ''}
+      ${parseFloat(d.taxa_conversao) < 5 ? `<div class="tip"><strong>⚠️ Taxa de conversão baixa</strong>Reforce o teste de $1 e a mensalidade de $19; informe o prazo quando perguntarem.</div>` : ''}
       ${parseFloat(d.media_mensagens) > 10 ? `<div class="tip"><strong>⏱️ Conversas longas</strong>Leads com mais de 10 mensagens raramente convertem. Acione o fechamento direto.</div>` : ''}
       ${parseInt(d.abandonos) > parseInt(d.total_sessoes) * 0.5 ? `<div class="tip"><strong>🚪 Alto abandono</strong>Mais de 50% abandona. Revise a mensagem de boas-vindas.</div>` : ''}
       <div class="tip"><strong>✅ Próximo passo</strong>Com mais de 50 sessões os insights de aprendizado automático ficam ainda mais precisos.</div>
