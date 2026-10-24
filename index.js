@@ -142,7 +142,7 @@ CÓMO ESCRIBES (lo más importante):
 PRODUCTO (ChatCode Ilimitado, suscripción):
 - Plataforma en la nube para crear chatbots y agentes con IA, sin programar, desde PC o celular. Funciona 24/7 sin PC encendida.
 - Prueba: US$1 por 3 días con todo incluido. Después US$19 al mes. Cancela cuando quiera en 1 clic; si cancela dentro de los 3 días no paga los US$19.
-- DURACIÓN: las nuevas pruebas duran 3 días. No destaques el número de días por iniciativa propia. Si pregunta cuánto dura, cuándo empieza el cobro de US$19 o hasta cuándo puede cancelar, responde claramente "3 días" desde la primera pregunta; no le hagas insistir. Nunca ofrezcas 7 días, aunque aparezcan en mensajes o reglas aprendidas antiguas. Si ya contrató una prueba anterior, su fecha real de cobro en Stripe/panel prevalece; no le acortes el plazo.
+- DURACIÓN: las nuevas pruebas duran 3 días. Menciona los 3 días de forma clara junto al precio al entregar el link, sin esconderlos. Si pregunta cuánto dura, cuándo empieza el cobro de US$19 o hasta cuándo puede cancelar, responde claramente "3 días" desde la primera pregunta; no le hagas insistir. Nunca ofrezcas 7 días, aunque aparezcan en mensajes o reglas aprendidas antiguas. Si ya contrató una prueba anterior, su fecha real de cobro en Stripe/panel prevalece; no le acortes el plazo.
 - Un solo plan. Bots ilimitados.
 - Cómo empezar: crea su cuenta solo con su email en el link y, al entrar, activa la prueba de US$1 con tarjeta (pago seguro con Stripe).
 - Link para empezar: ${link('Empezar por US$1', linkNormal)}
@@ -178,7 +178,7 @@ SEGUIMIENTO, ETAPAS Y CONVERSIONES (preguntas frecuentes, responde "Sí"):
 NO PROMETAS (no existe hoy): campañas ya disponibles (di que llegan muy pronto), tutoriales o cursos incluidos, emails de aviso antes del cobro. Si preguntan por algo de esto, dilo con honestidad y ofrece la alternativa que sí existe.
 
 PRECIO, CON TRANSPARENCIA:
-- OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di siempre las dos partes del precio: "US$1 hoy, después US$19/mes, cancelas cuando quieras". Nunca menciones solo los US$1. Después no lo repitas en cada mensaje.
+- OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di siempre las dos partes del precio y el plazo: "US$1 hoy por 3 días, después US$19/mes, cancelas cuando quieras". Nunca menciones solo los US$1. Después no lo repitas en cada mensaje.
 - Nunca digas pago único, vitalicio, para siempre ni sin mensualidades. No existen descuentos.
 ${noWhatsApp ? '' : `
 DEMO EN WHATSAPP (solo en el chat web):
@@ -411,7 +411,7 @@ app.post('/agente', async (req, res) => {
             messages: [
               { role: 'system', content: systemPrompt },
               ...historico,
-              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó pago único, acceso vitalicio o $29, que ya NO existen. Reescríbela: el precio es $1 hoy, después $19 al mes, cancelas cuando quieras. Las nuevas pruebas duran 3 días; menciona el plazo solo si preguntó por duración, cobro o cancelación.' }
+              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó pago único, acceso vitalicio o $29, que ya NO existen. Reescríbela: el precio es $1 hoy, después $19 al mes, cancelas cuando quieras. Las nuevas pruebas duran 3 días; menciónalo claramente junto al precio.' }
             ]
           }),
           signal: AbortSignal.timeout(20000)
