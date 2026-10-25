@@ -65,7 +65,22 @@ function parseDecision(raw) {
   return { accion, mensaje: accion === 'enviar' ? mensaje : '', motivo: String(d.motivo || '').slice(0, 200) };
 }
 
-function registerRemarketingRoutes(app, { baseUrl }) {
+function registerRemarketingRoutes(app, { baseUrl, pool }) {
+  /* O ChatCode avisa que enviou um toque: guarda para juntar ao historico quando o lead responder. */
+  app.post('/remarketing/registrar', async (req, res) => {
+    if (!isAuthorized(req)) return res.status(401).json({ erro: 'no autorizado' });
+    const jid = String(req.body.remoteJid || '').trim();
+    const mensaje = String(req.body.mensaje || '').trim().slice(0, 700);
+    if (!/^\d{5,20}@s\.whatsapp\.net$/.test(jid) || !mensaje) return res.status(400).json({ erro: 'datos inválidos' });
+    try {
+      await pool.query('INSERT INTO rmk_pending (remote_jid, content) VALUES ($1, $2)', [jid, mensaje]);
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error('Remarketing: erro ao registrar', err.message);
+      return res.status(500).json({ erro: 'no se pudo guardar' });
+    }
+  });
+
   app.post('/remarketing', async (req, res) => {
     if (!isAuthorized(req)) return res.status(401).json({ erro: 'no autorizado' });
     const touch = [1, 2, 3].includes(Number(req.body.touch)) ? Number(req.body.touch) : 1;

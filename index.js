@@ -62,6 +62,13 @@ async function initDB() {
     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS customer_name TEXT;
     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_customer BOOLEAN DEFAULT FALSE;
 
+    CREATE TABLE IF NOT EXISTS rmk_pending (
+      id SERIAL PRIMARY KEY,
+      remote_jid TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS link_clicks (
       id SERIAL PRIMARY KEY,
       session_id TEXT,
@@ -75,6 +82,29 @@ async function initDB() {
 // ============================================================
 // FUNÇÕES DE BANCO
 // ============================================================
+/* Mensagem de remarketing enviada pelo ChatCode: quando o lead responde, entra
+   no historico (com a hora em que foi enviada) para o agente saber o que foi dito.
+   Nunca derruba a resposta: qualquer erro aqui e ignorado. */
+const JID_RE = /^\d{5,20}@s\.whatsapp\.net$/;
+async function absorberRemarketing(sessionId, remoteJid) {
+  try {
+    const jid = String(remoteJid || '').trim();
+    if (!JID_RE.test(jid)) return;
+    const { rows } = await pool.query(
+      "DELETE FROM rmk_pending WHERE remote_jid = $1 AND created_at > NOW() - INTERVAL '8 days' RETURNING content, created_at",
+      [jid]
+    );
+    for (const r of rows.sort((x, y) => x.created_at - y.created_at)) {
+      await pool.query(
+        'INSERT INTO messages (session_id, role, content, created_at) VALUES ($1, $2, $3, $4)',
+        [sessionId, 'assistant', r.content, r.created_at]
+      );
+    }
+  } catch (err) {
+    console.error('Remarketing: nao foi possivel juntar ao historico:', err.message);
+  }
+}
+
 async function getHistory(sessionId) {
   /* As MAIS RECENTES. Antes era ASC + LIMIT: pegava as 40 primeiras da
      conversa pra sempre, e uma conversa longa nunca via o que acabou de
@@ -324,6 +354,7 @@ app.post('/agente', async (req, res) => {
     const id = temId ? sessionId : 'sem-session-id';
 
     // Busca histórico do banco
+    if (temId) await absorberRemarketing(id, req.body.remoteJid);
     const historico = temId ? await getHistory(id) : [];
 
     // Salva mensagem do usuário
@@ -457,7 +488,7 @@ app.post('/agente', async (req, res) => {
 // ============================================================
 // RASTREAMENTO DE CLIQUES NO CHECKOUT
 // ============================================================
-registerRemarketingRoutes(app, { baseUrl: BASE_URL });
+registerRemarketingRoutes(app, { baseUrl: BASE_URL, pool });
 
 app.get('/checkout/:tipo', async (req, res) => {
   const { tipo } = req.params;
