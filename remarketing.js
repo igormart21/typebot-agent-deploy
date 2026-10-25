@@ -22,7 +22,7 @@ ${TOUCH_GUIDE[touch] || TOUCH_GUIDE[1]}
 
 DECIDE una acción:
 - "parar": el lead dijo que no le interesa, pidió que no le escriban, se molestó, dice que ya compró o ya es cliente, o es claramente alguien que no es un lead (spam, soporte de otra cosa).
-- "omitir": la conversación terminó de forma natural (agradeció y se despidió tras resolver todo), o el último mensaje del lead sigue sin respuesta nuestra (el bot debe responderle, no hacer remarketing), o no hay nada útil que decir.
+- "omitir": el lead pidió hablar con una persona o tiene un problema de soporte sin resolver (lo atiende el equipo); la conversación terminó de forma natural (agradeció y se despidió tras resolver todo), o el último mensaje del lead sigue sin respuesta nuestra (el bot debe responderle, no hacer remarketing), o no hay nada útil que decir.
 - "enviar": hay una razón concreta para escribir.
 
 CÓMO ESCRIBES:

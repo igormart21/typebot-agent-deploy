@@ -14,6 +14,7 @@ const {
   salesCustomerSection,
 } = require('./support');
 const { registerRemarketingRoutes } = require('./remarketing');
+const { rolesSection, extractHandoff, notifyHandoff } = require('./roles');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -392,9 +393,10 @@ app.post('/agente', async (req, res) => {
     }
     const isSupport = Boolean(customer?.is_customer);
     const learnedRules = await getApprovedRules();
-    const systemPrompt = isSupport
+    const systemPrompt = (isSupport
       ? buildSupportPrompt(customer, canal)
-      : buildSystemPrompt(id, insights, canal, learnedRules) + salesCustomerSection(customer);
+      : buildSystemPrompt(id, insights, canal, learnedRules) + salesCustomerSection(customer))
+      + rolesSection({ canal, isSupport });
 
     // Chama a API da OpenAI com todo o histórico e timeout de 20s
     const controller = new AbortController();
@@ -461,6 +463,15 @@ app.post('/agente', async (req, res) => {
     if (!resposta) {
       return res.status(500).json({ erro: 'Resposta vazia' });
     }
+
+    /* Pedido de atendimento humano: tira o marcador da resposta e avisa o painel. */
+    const pedido = extractHandoff(resposta);
+    resposta = pedido.texto;
+    if (pedido.handoff && canal === 'whatsapp') {
+      const ultimo = [...historico].reverse().find((m) => m.role === 'user');
+      notifyHandoff({ remoteJid: req.body.remoteJid, motivo: typeof ultimo?.content === 'string' ? ultimo.content : entrada.texto });
+    }
+    if (!resposta) return res.status(500).json({ erro: 'Resposta vazia' });
 
     // Salva resposta no banco
     await saveMessage(id, 'assistant', resposta);

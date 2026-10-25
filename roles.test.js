@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const { rolesSection, extractHandoff, HANDOFF_MARK } = require('./roles');
+const wa = rolesSection({ canal: 'whatsapp', isSupport: false });
+assert.ok(wa.includes('VENTAS') && wa.includes('ENSEÑANZA') && wa.includes('SOPORTE') && wa.includes('ATENCIÓN HUMANA') && wa.includes('SEGUIMIENTO'));
+assert.ok(wa.includes(HANDOFF_MARK) && wa.includes('No mandes a nadie al correo'));
+const web = rolesSection({ canal: 'web', isSupport: true });
+assert.ok(web.includes('support@chatcode.site') && !web.includes('No mandes a nadie al correo'));
+assert.ok(web.includes('actúa como ventas'));
+assert.deepEqual(extractHandoff('Claro, te paso con una persona. [[HUMANO]]'), { texto: 'Claro, te paso con una persona.', handoff: true });
+assert.deepEqual(extractHandoff('Hola'), { texto: 'Hola', handoff: false });
+assert.equal(extractHandoff('[[humano]] ok').handoff, true);
+console.log('Agente: papeis (venta, ensenanza, soporte, humano, seguimiento) e marcador de atendimento humano verificados.');

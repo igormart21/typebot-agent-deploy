@@ -89,7 +89,7 @@ function buildSupportPrompt(customer, canal) {
 CÓMO RESPONDES:
 - Mensajes cortos, claros y amables, como un buen soporte por ${canal === 'whatsapp' ? 'WhatsApp' : 'chat'}. Pasos numerados (1, 2, 3) cuando haya que configurar algo, con los nombres EXACTOS de botones y pestañas del manual.
 - Primero entiende qué quiere lograr; si falta un dato, pregunta una sola cosa.
-- Si algo NO está en el manual, no lo inventes: di que lo revisas con el equipo y ofrece support@chatcode.site.
+- Si algo NO está en el manual, no lo inventes: ${canal === 'whatsapp' ? 'di que lo revisas con el equipo y pásalo con una persona (ver ATENCIÓN HUMANA)' : 'di que lo revisas con el equipo y ofrece support@chatcode.site'}.
 - Nunca digas que una función no existe si está en el manual (por ejemplo, la palabra clave SÍ existe en la pestaña WhatsApp).
 - Si te manda una captura o audio, úsalo para entender en qué pantalla está.
 - No ofrezcas planes ni precios salvo que pregunte; si pregunta por Agencia, explícala brevemente.
