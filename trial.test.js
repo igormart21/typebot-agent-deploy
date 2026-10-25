@@ -16,5 +16,7 @@ for (const canal of ['web', 'whatsapp']) {
   assert.ok(prompt.includes('su fecha real de cobro en Stripe/panel prevalece'));
   assert.ok(prompt.includes('US$1 hoy por 3 días, después US$19/mes'));
   assert.ok(!prompt.includes('Probar 7 días'));
+  assert.ok(prompt.includes('PRIMER MENSAJE'));
+  assert.ok(prompt.includes('¡Hola! 👋 Soy el asistente de ChatCode, un bot hecho con nuestra propia plataforma. ¿Qué tipo de negocio tienes?'));
 }
 console.log('Agente: oferta de 3 dias, transparência e precedência sobre regras antigas verificadas.');
