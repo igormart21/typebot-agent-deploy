@@ -7,7 +7,7 @@ const crypto = require('node:crypto');
 const MAX_MESSAGES = 30;
 const MAX_TEXT = 600;
 const TOUCH_GUIDE = {
-  1: 'TOQUE 1 (primer recordatorio, suave): retoma exactamente el último tema o duda abierta de la conversación. Sin presión, sin repetir el precio salvo que el precio haya sido su duda. Una sola pregunta o una invitación simple a seguir.',
+  1: 'TOQUE 1 (primer recordatorio, suave): retoma el último tema o duda abierta, pero NO repitas la pregunta ni la oferta que el asesor ya hizo: aporta algo nuevo y concreto para SU negocio (una idea de qué haría el bot en su caso, un detalle útil) y cierra con una invitación simple. Sin presión, sin repetir el precio salvo que el precio haya sido su duda.',
   2: 'TOQUE 2 (aporta valor): responde su objeción o duda real con algo nuevo y concreto para SU tipo de negocio (un ejemplo de qué haría el bot en su caso). Aquí puedes dar el link.',
   3: 'TOQUE 3 (último): corto y respetuoso, deja la puerta abierta, di que es el último mensaje y que puede escribir cuando quiera. Cero presión.',
 };
