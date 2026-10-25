@@ -13,6 +13,7 @@ const {
   buildSupportPrompt,
   salesCustomerSection,
 } = require('./support');
+const { registerRemarketingRoutes } = require('./remarketing');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -456,6 +457,8 @@ app.post('/agente', async (req, res) => {
 // ============================================================
 // RASTREAMENTO DE CLIQUES NO CHECKOUT
 // ============================================================
+registerRemarketingRoutes(app, { baseUrl: BASE_URL });
+
 app.get('/checkout/:tipo', async (req, res) => {
   const { tipo } = req.params;
   const { sessionId } = req.query;
