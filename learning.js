@@ -55,7 +55,7 @@ ${rules.trim()}`;
 
 async function transcripts(since) {
   const { rows: sessions } = await pool.query(
-    `SELECT id, converted FROM sessions
+    `SELECT id, converted, (to_jsonb(sessions) ->> 'outcome') AS outcome FROM sessions
       WHERE last_message_at >= $1 AND message_count >= 2
       ORDER BY last_message_at DESC LIMIT $2`,
     [since, MAX_SESSIONS]
@@ -70,7 +70,7 @@ async function transcripts(since) {
       .map((m) => `${m.role === 'user' ? 'Cliente' : 'Agente'}: ${m.content.replace(/\s+/g, ' ').slice(0, 400)}`)
       .join('\n');
     if (text.length > MAX_CHARS_PER_SESSION) text = '…' + text.slice(-MAX_CHARS_PER_SESSION);
-    out.push({ converted: s.converted, text });
+    out.push({ converted: s.converted, outcome: s.outcome, text });
   }
   return out;
 }
@@ -83,7 +83,7 @@ Datos del producto (no los cambies ni inventes otros):
 - ChatCode Agencia: US$97/mes, solo para quien crea bots para sus clientes.
 - No existen otros planes, descuentos ni funciones que no aparezcan en las conversaciones del agente.
 
-Te paso conversaciones marcadas como "CLIC EN EL LINK" (avanzó a la compra) o "ABANDONÓ". Y las reglas aprendidas que ya están vigentes.
+Te paso conversaciones marcadas como "CLIENTE (COMPRÓ)" (la mejor señal: pagó), "CLIC EN EL LINK" (avanzó a la compra) o "ABANDONÓ". Da más peso a lo que llevó a "CLIENTE (COMPRÓ)". Y las reglas aprendidas que ya están vigentes.
 
 Devuelve SOLO un JSON con este formato:
 {
@@ -108,7 +108,7 @@ async function generatePlaybook() {
 
   const current = await getApprovedRules();
   const body = convs
-    .map((c, i) => `### Conversación ${i + 1} — ${c.converted ? 'CLIC EN EL LINK' : 'ABANDONÓ'}\n${c.text}`)
+    .map((c, i) => `### Conversación ${i + 1} — ${c.outcome === 'cliente' ? 'CLIENTE (COMPRÓ)' : c.converted ? 'CLIC EN EL LINK' : 'ABANDONÓ'}\n${c.text}`)
     .join('\n\n');
 
   const r = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -12,9 +12,11 @@ const {
   lookupCustomer,
   buildSupportPrompt,
   salesCustomerSection,
+  MANUAL,
 } = require('./support');
 const { registerRemarketingRoutes } = require('./remarketing');
 const { rolesSection, extractHandoff, notifyHandoff } = require('./roles');
+const memory = require('./memory');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -128,6 +130,17 @@ async function saveMessage(sessionId, role, content) {
     ON CONFLICT (id) DO UPDATE
     SET last_message_at = NOW(), message_count = sessions.message_count + 1
   `, [sessionId]);
+}
+
+/* Estado da conta do cliente (consulta ao ChatCode), com cache curto. */
+const accountCache = new Map();
+async function cachedAccount(email) {
+  const hit = accountCache.get(email);
+  if (hit && Date.now() - hit.at < 5 * 60 * 1000) return hit.info;
+  const info = await lookupCustomer(email);
+  accountCache.set(email, { at: Date.now(), info });
+  if (accountCache.size > 500) accountCache.clear();
+  return info;
 }
 
 async function getInsights() {
@@ -393,10 +406,18 @@ app.post('/agente', async (req, res) => {
     }
     const isSupport = Boolean(customer?.is_customer);
     const learnedRules = await getApprovedRules();
-    const systemPrompt = (isSupport
+    let systemPrompt = (isSupport
       ? buildSupportPrompt(customer, canal)
       : buildSystemPrompt(id, insights, canal, learnedRules) + salesCustomerSection(customer))
       + rolesSection({ canal, isSupport });
+    /* Memoria (so com MEMORY_MODE=on): ficha do lead, estado real da conta, casos parecidos. */
+    systemPrompt += await memory.buildMemorySections({
+      jid: String(req.body.remoteJid || ''),
+      isSupport,
+      customerEmail: customer?.customer_email,
+      userText: entrada.texto,
+      getAccount: cachedAccount,
+    });
 
     // Chama a API da OpenAI com todo o histórico e timeout de 20s
     const controller = new AbortController();
@@ -475,6 +496,7 @@ app.post('/agente', async (req, res) => {
 
     // Salva resposta no banco
     await saveMessage(id, 'assistant', resposta);
+    memory.afterReply(id, String(req.body.remoteJid || ''));
 
     // Detecta se o agente enviou link de checkout (sinal de conversão)
     if (resposta.includes('/checkout/')) {
@@ -764,6 +786,7 @@ app.delete('/sessao/:sessionId', async (req, res) => {
 });
 
 registerLearningRoutes(app);
+memory.registerMemoryRoutes(app, { manual: MANUAL });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
@@ -771,4 +794,6 @@ app.listen(PORT, async () => {
   await initDB();
   await initLearning(pool);
   startScheduler();
+  await memory.initMemory(pool).catch((err) => console.error('Memoria nao iniciou:', err.message));
+  memory.startMemoryScheduler(lookupCustomer, MANUAL);
 });

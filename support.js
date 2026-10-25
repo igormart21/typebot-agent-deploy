@@ -120,4 +120,4 @@ SI DICE QUE YA ES CLIENTE, QUE YA PAGÓ, QUE YA ESTÁ EN LA PLATAFORMA O PIDE AY
 - No des instrucciones de configuración ni inventes pasos hasta verificar el correo.`;
 }
 
-module.exports = { EMAIL_RE, lookupCustomer, buildSupportPrompt, salesCustomerSection };
+module.exports = { EMAIL_RE, lookupCustomer, buildSupportPrompt, salesCustomerSection, MANUAL };
