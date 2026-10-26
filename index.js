@@ -352,7 +352,8 @@ async function interpretarMensagem(mensagem, instancia) {
 app.post('/agente', async (req, res) => {
   console.log('Incoming request to /agente:', JSON.stringify(req.body));
   try {
-    const { mensagem } = req.body;
+    /* O fluxo ja mandou a mensagem como "mensagem" e, por engano, como "mensaje": aceita as duas. */
+    const mensagem = req.body.mensagem ?? req.body.mensaje;
     const sessionId = String(req.body.sessionId || req.body.session_id || req.body.resultId || '').trim();
 
     if (!mensagem) {
