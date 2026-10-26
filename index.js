@@ -17,6 +17,7 @@ const {
 const { registerRemarketingRoutes } = require('./remarketing');
 const { rolesSection, extractHandoff, notifyHandoff } = require('./roles');
 const memory = require('./memory');
+const cta = require('./cta');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -412,6 +413,7 @@ app.post('/agente', async (req, res) => {
       : buildSystemPrompt(id, insights, canal, learnedRules) + salesCustomerSection(customer))
       + rolesSection({ canal, isSupport });
     /* Memoria (so com MEMORY_MODE=on): ficha do lead, estado real da conta, casos parecidos. */
+    if (canal === 'whatsapp' && cta.mode() !== 'off') systemPrompt += cta.PROMPT_NOTE;
     systemPrompt += await memory.buildMemorySections({
       jid: String(req.body.remoteJid || ''),
       isSupport,
@@ -495,18 +497,34 @@ app.post('/agente', async (req, res) => {
     }
     if (!resposta) return res.status(500).json({ erro: 'Resposta vazia' });
 
+    /* Botao no WhatsApp: o texto sai sem o link cru e o botao chega logo depois. */
+    const enviouLink = resposta.includes('/checkout/');
+    let botao = null;
+    if (canal === 'whatsapp' && cta.mode() !== 'off' && enviouLink) {
+      const parte = cta.splitCta(resposta, BASE_URL);
+      if (parte.url && parte.texto) {
+        resposta = parte.texto;
+        botao = parte.url;
+      }
+    }
+
     // Salva resposta no banco
-    await saveMessage(id, 'assistant', resposta);
+    await saveMessage(id, 'assistant', botao ? `${resposta}\n[Botón enviado: ${cta.LABEL}]` : resposta);
     memory.afterReply(id, String(req.body.remoteJid || ''));
 
     // Detecta se o agente enviou link de checkout (sinal de conversão)
-    if (resposta.includes('/checkout/')) {
+    if (enviouLink) {
       await pool.query(
         'UPDATE sessions SET converted = true WHERE id = $1',
         [id]
       );
     }
 
+    if (botao) {
+      const instancia = String(req.body.instancia || '');
+      const remoteJid = String(req.body.remoteJid || '');
+      setTimeout(() => { cta.sendCta({ instancia, remoteJid, url: botao, baseUrl: BASE_URL }); }, 4000);
+    }
     res.json({ resposta });
 
   } catch (err) {
