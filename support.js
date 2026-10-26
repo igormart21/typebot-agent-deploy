@@ -53,6 +53,7 @@ PESTAÑA WHATSAPP (conexión por QR):
 - Primero el bot debe estar publicado (botón "Publicar").
 - "Conectar con código QR": en el celular, WhatsApp → "Dispositivos vinculados" → "Vincular dispositivo" → escanear el QR. Alternativa: "Vincular con el número de teléfono" (llega un código de 8 dígitos para escribir en WhatsApp).
 - Funciona con WhatsApp normal y WhatsApp Business. Plan Ilimitado: hasta 5 números por espacio. Agencia: 15.
+- LÍMITE DE WHATSAPP (importante): cada número de WhatsApp permite máximo 4 dispositivos vinculados (WhatsApp Web o Desktop) además del celular, y el bot cuenta como uno. Si el negocio ya usa 4 estaciones de trabajo, debe elegir: (1) usar un número aparte para el bot (un chip o un WhatsApp Business nuevo) y dejar las 4 estaciones en el número de atención, que es lo más simple y evita que el bot y el equipo respondan a la vez; o (2) dejar 3 estaciones y atender las conversaciones del bot desde la bandeja del panel de ChatCode. La API oficial de Meta no usa ese límite, pero exige cuenta de Meta Business y Meta cobra por conversación; no prometas que se pueda usar el mismo número en la app normal y en la API oficial.
 - Sección "Configuración" de esa pestaña:
   · "¿Cuándo empieza el bot?": "Con cualquier mensaje" o "Solo con una palabra clave". Con palabra clave se elige "Contiene", "Es igual a", "Empieza con" o "Termina con" y se escribe la palabra. AQUÍ se configura que el bot solo responda a una palabra que viene de un anuncio.
   · "Palabra para terminar la conversación" (opcional).
