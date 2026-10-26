@@ -524,6 +524,44 @@ app.post('/agente', async (req, res) => {
 // ============================================================
 registerRemarketingRoutes(app, { baseUrl: BASE_URL, pool });
 
+/* Pagina de entrada do botao/cartao do WhatsApp: tem as tags de preview (imagem,
+   titulo, descricao) e redireciona na hora para o cadastro. O clique so conta
+   quando e uma pessoa (os robos de preview nao contam). */
+const BOT_UA = /whatsapp|facebookexternalhit|facebot|bot|crawler|spider|preview|curl|axios|undici|node-fetch|go-http|python/i;
+const escAttr = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+app.get('/assets/og-prueba.png', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.sendFile(require('node:path').join(__dirname, 'assets', 'og-prueba.png'));
+});
+app.get('/p/:tipo', async (req, res) => {
+  const sessionId = String(req.query.sessionId || '').slice(0, 80);
+  if (!BOT_UA.test(String(req.headers['user-agent'] || ''))) {
+    try {
+      await pool.query('INSERT INTO link_clicks (session_id, link_type) VALUES ($1, $2)', [sessionId || 'unknown', 'cta']);
+      if (sessionId) await pool.query('UPDATE sessions SET converted = true WHERE id = $1', [sessionId]);
+    } catch (err) {
+      console.error('Erro ao registrar clique:', err);
+    }
+  }
+  const destino = new URL(SIGNUP_URL);
+  const sid = String(req.query.client_reference_id || '');
+  if (destino.hostname === 'builder.chatcode.site' && /^[0-9a-f-]{36}$/i.test(sid)) destino.searchParams.set('tb_sid', sid);
+  const dest = escAttr(destino.toString());
+  const base = escAttr(BASE_URL);
+  res.set('Cache-Control', 'no-store').type('html').send(`<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>ChatCode · Empieza tu prueba por US$1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChatCode">
+<meta property="og:title" content="Empieza tu prueba de ChatCode por US$1">
+<meta property="og:description" content="Crea tu bot de WhatsApp con IA. 3 días por US$1, después US$19/mes. Cancelas cuando quieras.">
+<meta property="og:image" content="${base}/assets/og-prueba.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0;url=${dest}"></head>
+<body><script>location.replace(${JSON.stringify(destino.toString())})</script><p><a href="${dest}">Continuar a ChatCode</a></p></body></html>`);
+});
+
 app.get('/checkout/:tipo', async (req, res) => {
   const { tipo } = req.params;
   const { sessionId } = req.query;
