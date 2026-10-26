@@ -4,9 +4,9 @@
    o lead nunca fica sem ele. CTA_MODE: off (padrao) | card | button | image. */
 const CHECKOUT_RE = /https?:\/\/[^\s]+\/checkout\/(?:normal|discount|revenda)\?[^\s]+/gi;
 const JID_RE = /^\d{5,20}@s\.whatsapp\.net$/;
-const TITLE = 'Empieza tu prueba de ChatCode 👇';
-const LABEL = 'Empezar mi prueba';
-const DETAIL = 'US$1 hoy por 3 días, después US$19/mes. Cancelas cuando quieras.';
+const TITLE = 'Activa ChatCode con garantía de 7 días 👇';
+const LABEL = 'Activar ChatCode';
+const DETAIL = 'US$19/mes con garantía de reembolso de 7 días. Cancelas cuando quieras.';
 
 const mode = () => {
   const m = String(process.env.CTA_MODE || 'off').toLowerCase();
@@ -55,7 +55,7 @@ async function sendCta({ instancia, remoteJid, url, baseUrl }) {
     else if (m === 'image')
       await evo(`/message/sendMedia/${instancia}`, {
         number, mediatype: 'image', mimetype: 'image/png', fileName: 'chatcode.png',
-        media: `${baseUrl}/assets/og-prueba.png`, caption: `${TITLE}\n${url}`,
+        media: `${baseUrl}/assets/og-activar.png`, caption: `${TITLE}\n${url}`,
       });
     else
       await evo(`/message/sendText/${instancia}`, { number, text: `${TITLE}\n${url}`, linkPreview: true });
@@ -74,6 +74,6 @@ async function sendCta({ instancia, remoteJid, url, baseUrl }) {
 
 const PROMPT_NOTE = `
 
-BOTÓN DE INICIO: cuando entregues el link, preséntalo con una frase como "Te dejo el botón para empezar 👇" (no escribas "aquí está el link:"). El sistema convierte tu link en un botón que llega justo después de tu mensaje; sigue incluyendo el link y el precio con los 3 días en tu texto como siempre.`;
+BOTÓN DE INICIO: cuando entregues el link, preséntalo con una frase como "Te dejo el botón para empezar 👇" (no escribas "aquí está el link:"). El sistema convierte tu link en un botón que llega justo después de tu mensaje; sigue incluyendo el link y el precio con la garantía de 7 días en tu texto como siempre.`;
 
 module.exports = { mode, splitCta, sendCta, PROMPT_NOTE, LABEL };

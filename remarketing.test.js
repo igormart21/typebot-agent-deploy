@@ -1,12 +1,14 @@
 const assert = require('node:assert/strict');
 const { buildRemarketingPrompt, parseDecision, cleanMessages } = require('./remarketing');
 const p = buildRemarketingPrompt({ nombre: 'Ana', touch: 2, horas: 26, link: 'https://x/y' });
-assert.ok(p.includes('toque 2 de 3') && p.includes('US$1 hoy por 3 días, después US$19/mes') && p.includes('https://x/y'));
+assert.ok(p.includes('toque 2 de 3') && p.includes('US$19/mes, con garantía de reembolso de 7 días') && p.includes('https://x/y'));
 assert.ok(p.includes('TOQUE 2'));
 assert.ok(buildRemarketingPrompt({ nombre: '', touch: 1, horas: 5, link: 'x' }).includes('NO repitas la pregunta ni la oferta'));
 assert.equal(parseDecision('{"accion":"parar","mensaje":"","motivo":"no quiere"}').accion, 'parar');
 assert.equal(parseDecision('{"accion":"enviar","mensaje":"Hola, te cuento algo útil para tu tienda","motivo":"x"}').accion, 'enviar');
-assert.equal(parseDecision('{"accion":"enviar","mensaje":"Pruébalo 7 días gratis amigo","motivo":"x"}').accion, 'omitir');
+assert.equal(parseDecision('{"accion":"enviar","mensaje":"Pruébalo por US$1 hoy y decide","motivo":"x"}').accion, 'omitir');
+assert.equal(parseDecision('{"accion":"enviar","mensaje":"Tienes garantía de reembolso de 7 días, US$19/mes","motivo":"x"}').accion, 'enviar');
+assert.equal(parseDecision('{"accion":"enviar","mensaje":"Activa por US$19 con garantía de reembolso","motivo":"x"}').accion, 'enviar');
 assert.equal(parseDecision('{"accion":"enviar","mensaje":"corto","motivo":"x"}').accion, 'omitir');
 assert.equal(parseDecision('no json').accion, 'omitir');
 assert.equal(cleanMessages([{ role: 'lead', text: ' hi ' }, { role: 'x', text: 'no' }, { role: 'asesor', text: '' }]).length, 1);

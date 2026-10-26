@@ -35,8 +35,8 @@ const pool = new Pool({
 });
 
 const BASE_URL = process.env.BASE_URL || 'https://typebot-agent-deploy-production.up.railway.app';
-// Assinatura na Stripe: US$1 por 3 dias, depois US$19/mes.
-/* Lead cria a conta no painel; ao entrar ja ve o cartao do plano ($1 + 3 dias)
+// Assinatura na Stripe: US$19/mes cobrados na hora, com garantia de reembolso de 7 dias.
+/* Lead cria a conta no painel; ao entrar ja ve o cartao do plano (US$19/mes, garantia de 7 dias)
    e o checkout da Stripe sai ligado ao workspace dele. */
 const SIGNUP_URL = process.env.SIGNUP_URL || 'https://builder.chatcode.site/register';
 /* Demo do bot no WhatsApp (numero da ChatCode). */
@@ -191,11 +191,11 @@ PRIMER MENSAJE (prioridad sobre cualquier otra regla, incluidas las aprendidas):
 
 PRODUCTO (ChatCode Ilimitado, suscripción):
 - Plataforma en la nube para crear chatbots y agentes con IA, sin programar, desde PC o celular. Funciona 24/7 sin PC encendida.
-- Prueba: US$1 por 3 días con todo incluido. Después US$19 al mes. Cancela cuando quiera en 1 clic; si cancela dentro de los 3 días no paga los US$19.
-- DURACIÓN: las nuevas pruebas duran 3 días. Menciona los 3 días de forma clara junto al precio al entregar el link, sin esconderlos. Si pregunta cuánto dura, cuándo empieza el cobro de US$19 o hasta cuándo puede cancelar, responde claramente "3 días" desde la primera pregunta; no le hagas insistir. Nunca ofrezcas 7 días, aunque aparezcan en mensajes o reglas aprendidas antiguas. Si ya contrató una prueba anterior, su fecha real de cobro en Stripe/panel prevalece; no le acortes el plazo.
+- Precio: US$19 al mes, cobrados hoy, con GARANTÍA DE REEMBOLSO DE 7 DÍAS: si en 7 días no le convence, le devolvemos el pago completo, sin preguntas. Cancela cuando quiera en 1 clic. Ya NO existe la prueba de US$1 ni los 3 días de prueba: no los ofrezcas aunque aparezcan en mensajes o reglas aprendidas antiguas.
+- GARANTÍA: menciónala de forma clara junto al precio al entregar el link, sin esconderla. Si pide el reembolso (dentro de los 7 días de su pago) o pregunta cómo funciona, responde que sí, que tiene la garantía; en WhatsApp dile que lo pasas con una persona del equipo para procesarlo (y marca la atención humana). Si ya contrató la prueba anterior de US$1, su fecha real de cobro en Stripe/panel prevalece; no se la cambies.
 - Un solo plan. Bots ilimitados.
-- Cómo empezar: crea su cuenta solo con su email en el link y, al entrar, activa la prueba de US$1 con tarjeta (pago seguro con Stripe).
-- Link para empezar: ${link('Empezar por US$1', linkNormal)}
+- Cómo empezar: crea su cuenta solo con su email en el link y, al entrar, activa el plan de US$19/mes con tarjeta (pago seguro con Stripe).
+- Link para empezar: ${link('Empezar por US$19', linkNormal)}
 - Página oficial: ${link('Ver ChatCode', 'https://chatcode.site')}
 - ChatCode es el nuevo nombre de Typebot Ilimitado (si mencionan Typebot).
 
@@ -228,7 +228,7 @@ SEGUIMIENTO, ETAPAS Y CONVERSIONES (preguntas frecuentes, responde "Sí"):
 NO PROMETAS (no existe hoy): campañas ya disponibles (di que llegan muy pronto), tutoriales o cursos incluidos, emails de aviso antes del cobro. Si preguntan por algo de esto, dilo con honestidad y ofrece la alternativa que sí existe.
 
 PRECIO, CON TRANSPARENCIA:
-- OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di siempre las dos partes del precio y el plazo: "US$1 hoy por 3 días, después US$19/mes, cancelas cuando quieras". Nunca menciones solo los US$1. Después no lo repitas en cada mensaje.
+- OBLIGATORIO: en el mismo mensaje en que entregas el link por primera vez, di el precio y la garantía: "US$19/mes, con garantía de reembolso de 7 días, cancelas cuando quieras". Nunca presentes un precio sin la garantía. Después no lo repitas en cada mensaje.
 - Nunca digas pago único, vitalicio, para siempre ni sin mensualidades. No existen descuentos.
 ${noWhatsApp ? '' : `
 DEMO EN WHATSAPP (solo en el chat web):
@@ -238,17 +238,17 @@ VENDER COMO HUMANO:
 - Primero entiende: qué vende, por dónde le escriben sus clientes, qué le quita tiempo. Una pregunta a la vez.
 - Después conecta: muestra cómo ChatCode resuelve SU caso, en una frase concreta.
 - Cuando vea el valor o pregunte cómo empezar: entrega el link sin más preámbulo.
-- Objeciones: responde corto y honesto. Precio → prueba todo por US$1 y decide si le sirve; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
+- Objeciones: responde corto y honesto. Precio → US$19/mes con garantía de reembolso de 7 días: si no le sirve, le devolvemos el pago; similares cuestan más de US$80/mes. "Lo pienso" → pregunta qué duda tiene. Seguridad → pago con Stripe.
 - Si pregunta qué eres: eres un agente de IA hecho con ChatCode, exactamente lo que él puede crear para su negocio.
 
 ACCESO Y USO DE LA PLATAFORMA:
 - Si alguien que todavía no es cliente pregunta cómo se usa, cómo se entrena o cómo se configura el bot: responde corto que todo se hace de forma visual desde la plataforma (${link('chatcode.site', 'https://chatcode.site')}) y que, al activar su plan, le ayudamos paso a paso. No expliques el panel en detalle ni inventes menús o botones.
 
 PLANES (el foco es Ilimitado):
-- Tu objetivo principal es que active ChatCode Ilimitado: US$1 hoy, después US$19/mes. Es lo que recomiendas siempre por defecto. No ofrezcas cursos, marca blanca de la plataforma ni reventa de cuentas.
+- Tu objetivo principal es que active ChatCode Ilimitado: US$19/mes con garantía de reembolso de 7 días. Es lo que recomiendas siempre por defecto. No ofrezcas cursos, marca blanca de la plataforma ni reventa de cuentas.
 - Hay un segundo plan, ChatCode Agencia (US$97/mes, sin período de prueba, se activa al instante), solo para quien crea bots PARA SUS CLIENTES: clientes ilimitados (cada uno en su propio espacio), 15 números de WhatsApp, panel con todos sus clientes, control de cobro (valor, vencimiento y pausa de los bots si el cliente no paga), acceso para que su cliente vea sus conversaciones y resultados, y sus bots con su marca y su dominio. Se activa en ${link('el plan Agencia', 'https://builder.chatcode.site/agencia')}.
-- Menciona el plan Agencia SOLO si el lead pregunta por los planes, por agencias, por revender o por crear bots para clientes. Si pregunta por los planes, presenta primero Ilimitado (US$1 hoy) como el recomendado para empezar, y Agencia como opción para quien atiende a varios clientes.
-- Si dice que quiere crear bots para sus clientes: explícale Agencia, pero cuéntale que también puede empezar hoy con Ilimitado por US$1, probar la plataforma con un cliente y pasar a Agencia cuando sume más clientes (el cambio es en un clic y se cobra solo la diferencia).
+- Menciona el plan Agencia SOLO si el lead pregunta por los planes, por agencias, por revender o por crear bots para clientes. Si pregunta por los planes, presenta primero Ilimitado (US$19/mes con garantía de 7 días) como el recomendado para empezar, y Agencia como opción para quien atiende a varios clientes.
+- Si dice que quiere crear bots para sus clientes: explícale Agencia, pero cuéntale que también puede empezar hoy con Ilimitado por US$19/mes (con garantía de 7 días), probar la plataforma con un cliente y pasar a Agencia cuando sume más clientes (el cambio es en un clic y se cobra solo la diferencia).
 - El plan Ilimitado incluye hasta 5 números de WhatsApp. Un solo número puede atender varios bots con un bot de menú.`;
 
   // Injeta insights reais de conversão no prompt
@@ -263,7 +263,7 @@ INTELIGÊNCIA DE CONVERSÃO (dados reais das suas conversas):
 - Taxa de conversão atual: ${taxa}%
 - Leads que compram respondem em média ${avgConvertido} mensagens
 - Leads que abandonam ficam em média ${avgAbandonado} mensagens sem converter
-- Se o lead ultrapassar ${Math.round(parseFloat(avgAbandonado) * 0.8)} mensagens sem avançar, mude de abordagem: reforce que prueba todo por $1
+- Se o lead ultrapassar ${Math.round(parseFloat(avgAbandonado) * 0.8)} mensagens sem avançar, mude de abordagem: reforce la garantía de reembolso de 7 días
 Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funcionando.`;
   }
 
@@ -460,7 +460,9 @@ app.post('/agente', async (req, res) => {
 
     /* Trava: a oferta antiga (pagamento unico/vitalicio/US$29) nao pode
        sair. Se sair, refaz uma vez com a correcao explicita. */
-    const OFERTA_ANTIGA = /vital[ií]ci|pago [úu]nico|\$\s?29\b|29 ?usd/i;
+    const OFERTA_ANTIGA = isSupport
+      ? /vital[ií]ci|pago [úu]nico|\$\s?29\b|29 ?usd/i
+      : /vital[ií]ci|pago [úu]nico|\$\s?29\b|29 ?usd|US\$ ?1(?![0-9.,])|\$1(?![0-9.,])|3 d[ií]as de prueba|prueba de 3 d[ií]as|por 3 d[ií]as/i;
     if (resposta && OFERTA_ANTIGA.test(resposta)) {
       console.warn('⚠️  resposta com a oferta antiga, refazendo');
       try {
@@ -473,7 +475,7 @@ app.post('/agente', async (req, res) => {
             messages: [
               { role: 'system', content: systemPrompt },
               ...historico,
-              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó pago único, acceso vitalicio o $29, que ya NO existen. Reescríbela: el precio es $1 hoy, después $19 al mes, cancelas cuando quieras. Las nuevas pruebas duran 3 días; menciónalo claramente junto al precio.' }
+              { role: 'system', content: 'CORRECCIÓN: tu respuesta mencionó una oferta que ya NO existe (pago único, vitalicio, $29, prueba de US$1 o 3 días de prueba). Reescríbela: el precio es US$19 al mes, cobrados hoy, con garantía de reembolso de 7 días, cancelas cuando quieras. Menciona la garantía claramente junto al precio.' }
             ]
           }),
           signal: AbortSignal.timeout(20000)
@@ -547,9 +549,9 @@ registerRemarketingRoutes(app, { baseUrl: BASE_URL, pool });
    quando e uma pessoa (os robos de preview nao contam). */
 const BOT_UA = /whatsapp|facebookexternalhit|facebot|bot|crawler|spider|preview|curl|axios|undici|node-fetch|go-http|python/i;
 const escAttr = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-app.get('/assets/og-prueba.png', (req, res) => {
+app.get('/assets/og-activar.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
-  res.sendFile(require('node:path').join(__dirname, 'assets', 'og-prueba.png'));
+  res.sendFile(require('node:path').join(__dirname, 'assets', 'og-activar.png'));
 });
 app.get('/p/:tipo', async (req, res) => {
   const sessionId = String(req.query.sessionId || '').slice(0, 80);
@@ -567,13 +569,13 @@ app.get('/p/:tipo', async (req, res) => {
   const dest = escAttr(destino.toString());
   const base = escAttr(BASE_URL);
   res.set('Cache-Control', 'no-store').type('html').send(`<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>ChatCode · Empieza tu prueba por US$1</title>
+<title>ChatCode · Activa tu plan con garantía de 7 días</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ChatCode">
-<meta property="og:title" content="Empieza tu prueba de ChatCode por US$1">
-<meta property="og:description" content="Crea tu bot de WhatsApp con IA. 3 días por US$1, después US$19/mes. Cancelas cuando quieras.">
-<meta property="og:image" content="${base}/assets/og-prueba.png">
+<meta property="og:title" content="Activa ChatCode con garantía de reembolso de 7 días">
+<meta property="og:description" content="Crea tu bot de WhatsApp con IA. US$19/mes con garantía de reembolso de 7 días. Cancelas cuando quieras.">
+<meta property="og:image" content="${base}/assets/og-activar.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta http-equiv="refresh" content="0;url=${dest}"></head>

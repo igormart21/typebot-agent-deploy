@@ -15,7 +15,7 @@ const TOUCH_GUIDE = {
 function buildRemarketingPrompt({ nombre, touch, horas, link }) {
   return `Eres el asesor de ventas de ChatCode escribiendo por WhatsApp a un lead que NO compró. Vas a decidir si vale la pena retomar la conversación y, si sí, escribir UN mensaje adaptado a lo que esta persona dijo.
 
-PRODUCTO: ChatCode es una plataforma para crear chatbots y agentes con IA sin programar (WhatsApp, web, Instagram). Prueba de US$1 por 3 días con todo incluido; después US$19/mes; cancela cuando quiera en 1 clic (si cancela dentro de los 3 días no paga los US$19).
+PRODUCTO: ChatCode es una plataforma para crear chatbots y agentes con IA sin programar (WhatsApp, web, Instagram). US$19/mes cobrados hoy, con garantía de reembolso de 7 días (si no le convence, le devolvemos el pago completo, sin preguntas); cancela cuando quiera en 1 clic. Ya no existe la prueba de US$1.
 
 CONTEXTO: es el toque ${touch} de 3. Pasaron ${horas} horas desde el último mensaje del lead.${nombre ? ` Se llama ${nombre}.` : ''}
 ${TOUCH_GUIDE[touch] || TOUCH_GUIDE[1]}
@@ -31,7 +31,7 @@ CÓMO ESCRIBES:
 - No saludes con "¡Hola!" como si fuera la primera vez. Puedes usar su nombre una vez, si lo tienes.
 - Prohibido: inventar datos, estadísticas o clientes; culpar o presionar ("última oportunidad", "se acaba"); mentir sobre precio o plazos; sonar a plantilla ("te escribo para dar seguimiento").
 - Máximo 1 emoji, y no obligatorio.
-- El link solo va si el lead ya vio el precio o si es el toque 2 o 3. Si lo incluyes: en su propia línea, texto simple, y en la misma frase di "US$1 hoy por 3 días, después US$19/mes, cancelas cuando quieras". Link: ${link}
+- El link solo va si el lead ya vio el precio o si es el toque 2 o 3. Si lo incluyes: en su propia línea, texto simple, y en la misma frase di "US$19/mes, con garantía de reembolso de 7 días, cancelas cuando quieras". Link: ${link}
 - No uses las palabras "remarketing" ni "seguimiento".
 
 Responde SOLO con JSON válido: {"accion":"enviar|omitir|parar","mensaje":"texto o vacío","motivo":"una frase corta en español"}`;
@@ -61,7 +61,7 @@ function parseDecision(raw) {
   let mensaje = typeof d.mensaje === 'string' ? d.mensaje.trim() : '';
   if (accion === 'enviar' && (mensaje.length < 8 || mensaje.length > 700)) return { accion: 'omitir', mensaje: '', motivo: 'mensaje fuera de rango' };
   /* Preco antigo ou promessa que nao existe: nunca sai. */
-  if (/\$29|7 d[ií]as|vitalic|pago [uú]nico/i.test(mensaje)) return { accion: 'omitir', mensaje: '', motivo: 'mencionó una oferta que ya no existe' };
+  if (/\$29|vitalic|pago [uú]nico|US\$ ?1(?![0-9.,])|\$1(?![0-9.,])|3 d[ií]as de prueba|prueba de 3 d[ií]as|por 3 d[ií]as/i.test(mensaje)) return { accion: 'omitir', mensaje: '', motivo: 'mencionó una oferta que ya no existe' };
   return { accion, mensaje: accion === 'enviar' ? mensaje : '', motivo: String(d.motivo || '').slice(0, 200) };
 }
 
