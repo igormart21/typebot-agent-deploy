@@ -77,7 +77,7 @@ CAMPAÑAS (menú ☰ → Campañas → "Nueva campaña"):
 - Mensaje con variables ({{nombre}}, {{placa}}…), número de WhatsApp desde el que sale, velocidad (Seguro 150/día, Normal 300/día, Rápido 500/día), horario de envío y "Enviarme una prueba".
 - Salen de forma gradual para cuidar el número. Cuando el cliente responde, el bot lo atiende.
 
-FACTURACIÓN: "Configuración y Miembros" → Facturación: ver el plan, "Cambiar tarjeta y ver facturas". Para cancelar: escribir a support@chatcode.site.
+FACTURACIÓN: "Configuración y Miembros" → Facturación: ver el plan, "Cambiar tarjeta y ver facturas". Para cancelar: lo pide por aquí y una persona del equipo lo gestiona.
 EQUIPO: "Configuración y Miembros" → Miembros → invitar por correo.
 AGENCIA (si tiene el plan): menú ☰ → Agencia: crear clientes, entrar a cada uno, configurar cobro, pausar bots, dar acceso al cliente.`;
 
