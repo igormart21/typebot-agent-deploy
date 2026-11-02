@@ -12,4 +12,12 @@ assert.equal(parseDecision('{"accion":"enviar","mensaje":"Activa por US$19 con g
 assert.equal(parseDecision('{"accion":"enviar","mensaje":"corto","motivo":"x"}').accion, 'omitir');
 assert.equal(parseDecision('no json').accion, 'omitir');
 assert.equal(cleanMessages([{ role: 'lead', text: ' hi ' }, { role: 'x', text: 'no' }, { role: 'asesor', text: '' }]).length, 1);
+// Com TRIAL_ENABLED ligado a oferta e o teste de 3 dias por US$1 (a garantia antiga e que nao pode sair).
+process.env.TRIAL_ENABLED = 'true';
+const pt = buildRemarketingPrompt({ nombre: '', touch: 2, horas: 26, link: 'https://x/y' });
+assert.ok(pt.includes('3 días de prueba por US$1, después US$19/mes, cancelas cuando quieras') && !pt.includes('garantía de reembolso de 7 días, cancelas'));
+assert.equal(parseDecision('{"accion":"enviar","mensaje":"Pruébalo 3 días por US$1 y decide, sin compromiso","motivo":"x"}').accion, 'enviar');
+assert.equal(parseDecision('{"accion":"enviar","mensaje":"Tienes garantía de reembolso de 7 días, US$19/mes","motivo":"x"}').accion, 'omitir');
+assert.equal(parseDecision('{"accion":"enviar","mensaje":"Es un pago único de $29 para siempre","motivo":"x"}').accion, 'omitir');
+delete process.env.TRIAL_ENABLED;
 console.log('Remarketing do agente: decisao, guardas e prompt verificados.');

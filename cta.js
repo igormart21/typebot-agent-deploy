@@ -2,11 +2,10 @@
    O texto da resposta sai sem o link e, logo depois, o agente manda o botao
    pela Evolution. Se o envio do botao falhar, o link vai como texto simples:
    o lead nunca fica sem ele. CTA_MODE: off (padrao) | card | button | image. */
+const { offer } = require('./offer');
 const CHECKOUT_RE = /https?:\/\/[^\s]+\/checkout\/(?:normal|discount|revenda)\?[^\s]+/gi;
 const JID_RE = /^\d{5,20}@s\.whatsapp\.net$/;
-const TITLE = 'Activa ChatCode con garantía de 7 días 👇';
 const LABEL = 'Activar ChatCode';
-const DETAIL = 'US$19/mes con garantía de reembolso de 7 días. Cancelas cuando quieras.';
 
 const mode = () => {
   const m = String(process.env.CTA_MODE || 'off').toLowerCase();
@@ -49,16 +48,16 @@ async function sendCta({ instancia, remoteJid, url, baseUrl }) {
   try {
     if (m === 'button')
       await evo(`/message/sendButtons/${instancia}`, {
-        number, title: 'ChatCode', description: DETAIL, footer: 'ChatCode',
+        number, title: 'ChatCode', description: offer().ctaDetail, footer: 'ChatCode',
         buttons: [{ type: 'url', displayText: LABEL, url }],
       });
     else if (m === 'image')
       await evo(`/message/sendMedia/${instancia}`, {
         number, mediatype: 'image', mimetype: 'image/png', fileName: 'chatcode.png',
-        media: `${baseUrl}/assets/og-activar.png`, caption: `${TITLE}\n${url}`,
+        media: `${baseUrl}/assets/og-activar.png`, caption: `${offer().ctaTitle}\n${url}`,
       });
     else
-      await evo(`/message/sendText/${instancia}`, { number, text: `${TITLE}\n${url}`, linkPreview: true });
+      await evo(`/message/sendText/${instancia}`, { number, text: `${offer().ctaTitle}\n${url}`, linkPreview: true });
     return true;
   } catch (err) {
     console.error('CTA: falhou o envio, mandando o link simples:', err.message);
@@ -74,6 +73,6 @@ async function sendCta({ instancia, remoteJid, url, baseUrl }) {
 
 const PROMPT_NOTE = `
 
-BOTÓN DE INICIO: cuando entregues el link, preséntalo con una frase como "Te dejo el botón para empezar 👇" (no escribas "aquí está el link:"). El sistema convierte tu link en un botón que llega justo después de tu mensaje; sigue incluyendo el link y el precio con la garantía de 7 días en tu texto como siempre.`;
+BOTÓN DE INICIO: cuando entregues el link, preséntalo con una frase como "Te dejo el botón para empezar 👇" (no escribas "aquí está el link:"). El sistema convierte tu link en un botón que llega justo después de tu mensaje; sigue incluyendo el link y la oferta vigente (precio y prueba o garantía, tal como figura en tus instrucciones) en tu texto como siempre.`;
 
 module.exports = { mode, splitCta, sendCta, PROMPT_NOTE, LABEL };

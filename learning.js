@@ -75,11 +75,12 @@ async function transcripts(since) {
   return out;
 }
 
+const { offer } = require('./offer');
 const ANALYST_PROMPT = `Eres un analista de ventas. Analizas conversaciones reales entre un agente de IA que vende ChatCode por WhatsApp y posibles clientes en Latinoamérica.
 
 Datos del producto (no los cambies ni inventes otros):
-- ChatCode Ilimitado: US$19/mes cobrados hoy, con garantía de reembolso de 7 días, cancela cuando quiera. Es el producto principal. Ya NO existe la prueba de US$1 ni los 3 días de prueba.
-- Menciona la garantía de reembolso de 7 días junto al precio al entregar el link, sin esconderla. Descarta reglas antiguas que ofrezcan la prueba de US$1, 3 días o 7 días de prueba.
+- ${offer().learningProduct}
+- ${offer().learningPolicy}
 - ChatCode Agencia: US$97/mes, solo para quien crea bots para sus clientes.
 - No existen otros planes, descuentos ni funciones que no aparezcan en las conversaciones del agente.
 
