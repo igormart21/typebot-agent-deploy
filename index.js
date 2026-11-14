@@ -19,6 +19,7 @@ const { rolesSection, extractHandoff, notifyHandoff } = require('./roles');
 const memory = require('./memory');
 const { offer } = require('./offer');
 const cta = require('./cta');
+const { botReason } = require('./botguard');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -66,6 +67,11 @@ async function initDB() {
     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS customer_plan TEXT;
     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS customer_name TEXT;
     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS is_customer BOOLEAN DEFAULT FALSE;
+    CREATE TABLE IF NOT EXISTS bot_blocks (
+      key TEXT PRIMARY KEY,
+      reason TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
 
     CREATE TABLE IF NOT EXISTS rmk_pending (
       id SERIAL PRIMARY KEY,
@@ -374,10 +380,29 @@ app.post('/agente', async (req, res) => {
     if (temId) await absorberRemarketing(id, req.body.remoteJid);
     const historico = temId ? await getHistory(id) : [];
 
+    /* Outro robo (IA, menu, resposta automatica): sessao ja marcada = nao gasta nada
+       (nem transcricao de audio, nem OpenAI). Devolve resposta vazia, o bot nao envia. */
+    const parar = () => res.json({ resposta: '', bloqueado: true });
+    /* Bloqueio por numero (a sessao do Typebot expira em 30 min e abre outra); sem numero, por sessao. */
+    const chaveBloqueio = String(req.body.remoteJid || '').trim() || (temId ? id : '');
+    if (chaveBloqueio && (await pool.query('SELECT 1 FROM bot_blocks WHERE key = $1', [chaveBloqueio]).catch(() => ({ rows: [] }))).rows.length) return parar();
+
     // Salva mensagem do usuário
     const entrada = await interpretarMensagem(mensagem, String(req.body.instancia || ''));
     await saveMessage(id, 'user', entrada.texto);
     historico.push({ role: 'user', content: entrada.conteudo });
+
+    if (temId) {
+      const recentes = (await pool.query(
+        "SELECT content, created_at FROM messages WHERE session_id = $1 AND role = 'user' ORDER BY created_at DESC LIMIT 80", [id]
+      ).catch(() => ({ rows: [] }))).rows.map((m) => ({ content: m.content, at: new Date(m.created_at).getTime() }));
+      const motivo = botReason(entrada.texto, recentes);
+      if (motivo) {
+        console.warn(`🤖 ${chaveBloqueio} parece outro robo (${motivo}): agente para de responder`);
+        await pool.query('INSERT INTO bot_blocks (key, reason) VALUES ($1, $2) ON CONFLICT DO NOTHING', [chaveBloqueio, motivo]).catch(() => {});
+        return parar();
+      }
+    }
 
     // Busca insights para enriquecer o prompt
     const insights = await getInsights();
@@ -843,6 +868,18 @@ app.delete('/sessao/:sessionId', async (req, res) => {
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
+});
+
+/* Desbloqueia um numero/sessao marcado como robo (falso positivo). Lista: GET /bloqueios. */
+const adminOk = (req) => Boolean(process.env.AGENT_ADMIN_KEY) && req.query.key === process.env.AGENT_ADMIN_KEY;
+app.get('/bloqueios', async (req, res) => {
+  if (!adminOk(req)) return res.status(403).json({ erro: 'acesso negado' });
+  res.json((await pool.query('SELECT key, reason, created_at FROM bot_blocks ORDER BY created_at DESC LIMIT 200')).rows);
+});
+app.delete('/bloqueios/:key', async (req, res) => {
+  if (!adminOk(req)) return res.status(403).json({ erro: 'acesso negado' });
+  await pool.query('DELETE FROM bot_blocks WHERE key = $1', [req.params.key]);
+  res.json({ ok: true });
 });
 
 registerLearningRoutes(app);
