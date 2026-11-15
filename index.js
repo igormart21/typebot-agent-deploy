@@ -327,11 +327,13 @@ async function interpretarMensagem(mensagem, instancia) {
   if (!m) return { texto: mensagem, conteudo: mensagem };
   const [, tipo, id] = m;
   const nome = NOME_MIDIA[tipo];
+  let motivo = 'midia nao baixada (variaveis ou resposta da Evolution)';
   try {
     const midia = await baixarMidia(instancia, id);
     if (midia && tipo === 'audioMessage') {
       const t = await transcrever(midia);
       if (t) return { texto: `[audio] ${t}`, conteudo: `(El cliente envió un audio. Transcripción:) ${t}` };
+      motivo = 'whisper sem texto (chave/saldo da OpenAI?)';
     }
     if (midia && (tipo === 'imageMessage' || tipo === 'stickerMessage') && midia.mimetype.startsWith('image/')) {
       return {
@@ -353,9 +355,10 @@ async function interpretarMensagem(mensagem, instancia) {
     }
   } catch (err) {
     console.error('Erro ao ler midia:', err.message);
+    motivo = `erro: ${err.message}`;
   }
   const aviso = `(El cliente envió ${nome} que no se pudo abrir. Pídele con amabilidad que te lo escriba en texto.)`;
-  return { texto: `[${nome}]`, conteudo: aviso };
+  return { texto: `[${nome}]`, conteudo: aviso, motivo };
 }
 
 // ============================================================
@@ -393,6 +396,7 @@ app.post('/agente', async (req, res) => {
 
     // Salva mensagem do usuário
     const entrada = await interpretarMensagem(mensagem, String(req.body.instancia || ''));
+    if (req.body.debug === 'midia') return res.json({ debug: entrada.motivo || 'ok', texto: entrada.texto });
     await saveMessage(id, 'user', entrada.texto);
     historico.push({ role: 'user', content: entrada.conteudo });
 
