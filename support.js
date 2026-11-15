@@ -61,7 +61,7 @@ PESTAÑA WHATSAPP (conexión por QR):
   · "No responder en grupos".
 - Anuncios de Meta (clic a WhatsApp): en el mensaje predefinido del anuncio poner la palabra clave, ej. "Hola, quiero información PROMO", y en "¿Cuándo empieza el bot?" elegir "Solo con una palabra clave" → "Contiene" → PROMO.
 - Si se desconecta: volver a la pestaña WhatsApp y escanear el QR otra vez. No conectar el mismo número en otra herramienta al mismo tiempo.
-- La API oficial de WhatsApp de Meta también existe en la pestaña "Compartir" → "WhatsApp API" (requiere cuenta de Meta Business; Meta cobra por conversación).
+- La API oficial de WhatsApp de Meta también existe en la pestaña "Compartir" → "WhatsApp API" (requiere cuenta de Meta Business; Meta cobra por mensaje solo los que inicia el negocio, responder a quien escribe primero es gratis). Es una opción a elección del cliente, igual que el QR..
 
 GOOGLE SHEETS: Integraciones → "Sheets" → conectar su cuenta de Google → elegir la hoja → acción "Insertar una fila" → asignar cada columna a una variable ({{nombre}}, {{telefono}}…). Para Excel: descargar la hoja de Google como Excel.
 
