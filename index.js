@@ -18,6 +18,7 @@ const { registerRemarketingRoutes } = require('./remarketing');
 const { rolesSection, extractHandoff, notifyHandoff } = require('./roles');
 const memory = require('./memory');
 const { offer } = require('./offer');
+const blackfriday = require('./blackfriday');
 const cta = require('./cta');
 const { botReason } = require('./botguard');
 const app = express();
@@ -401,6 +402,17 @@ app.post('/agente', async (req, res) => {
         console.warn(`🤖 ${chaveBloqueio} parece outro robo (${motivo}): agente para de responder`);
         await pool.query('INSERT INTO bot_blocks (key, reason) VALUES ($1, $2) ON CONFLICT DO NOTHING', [chaveBloqueio, motivo]).catch(() => {});
         return parar();
+      }
+    }
+
+    /* Black Friday antes de abrir (24/11 a 26/11): resposta fixa, sem pergunta, e o telefone
+       entra na lista de espera do painel. So WhatsApp, so mensagens sobre Black Friday. */
+    if (String(req.body.canal || '').toLowerCase() === 'whatsapp' && req.body.remoteJid) {
+      const fixa = blackfriday.waitlistReply(entrada.texto, historico);
+      if (fixa) {
+        await blackfriday.registerPhone(req.body.remoteJid);
+        await saveMessage(id, 'assistant', fixa);
+        return res.json({ resposta: fixa });
       }
     }
 

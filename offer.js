@@ -54,6 +54,41 @@ const TRIAL = {
   refundRole: 'No prometas reembolsos: si pide devolución de un pago, pásalo con una persona del equipo para revisarlo.',
 };
 
-const offer = () => (trialOn() ? TRIAL : GUARANTEE);
+/* Black Friday 2026: plano anual US$149 (Agencia anual US$749), so de 27/11 a 1/12 (UTC-5).
+   Mesma janela do painel (billing/blackFridayWindow.ts). A urgencia real e a DATA FINAL:
+   o agente nunca fala de vagas limitadas, porque nao ha limite. */
+const BF_START = Date.parse('2026-11-27T05:00:00Z');
+const BF_END = Date.parse('2026-12-02T05:00:00Z');
+const bfOn = (now = Date.now()) => now >= BF_START && now < BF_END;
 
-module.exports = { offer, trialOn };
+const BLACKFRIDAY = {
+  mode: 'blackfriday',
+  short: 'Black Friday: plan anual US$149 (en vez de US$228) hasta el 1 de diciembre, o US$19/mes',
+  shortCtx: 'plan anual de Black Friday a US$149 (o US$19/mes)',
+  product: 'OFERTA BLACK FRIDAY (hasta el 1 de diciembre a las 23:59, hora de Colombia): ChatCode Ilimitado ANUAL por US$149 en vez de US$228 (equivale a US$12,42 al mes), con garantía de reembolso de 7 días. Plan Agencia anual: US$749 en vez de US$1.164. La opción mensual de US$19/mes sigue existiendo. La oferta es solo para quien aún no tiene suscripción activa: si ya es cliente activo, no se la ofrezcas. NUNCA hables de cupos limitados ni de "últimas plazas": no hay límite; la urgencia real es la fecha final.',
+  policy: 'BLACK FRIDAY: preséntala junto al precio al entregar el link: anual US$149, 12 meses, garantía de reembolso de 7 días, termina el 1 de diciembre. No inventes cupos limitados ni descuentos extra. Para activarla, el lead crea su cuenta con el link y, al entrar al panel, ve la oferta en la faja de arriba. Si pide el reembolso (dentro de los 7 días de su pago), pásalo con una persona del equipo (y marca la atención humana).',
+  howTo: 'activa la oferta anual de Black Friday desde la faja del panel (pago seguro con Stripe)',
+  linkLabel: 'Activar la oferta de Black Friday',
+  mandatory: 'di el precio y la fecha: "Black Friday: US$149 al año (en vez de US$228), con garantía de reembolso de 7 días, termina el 1 de diciembre". Nunca hables de cupos limitados.',
+  objection: 'US$149 al año (equivale a US$12,42 al mes) con garantía de reembolso de 7 días: si no le sirve, le devolvemos el pago; la oferta termina el 1 de diciembre',
+  reinforce: 'refuerza la garantía de reembolso de 7 días y la fecha real de término (1 de diciembre)',
+  fix: 'CORRECCIÓN: tu respuesta mencionó una oferta que NO existe (pago único, vitalicio, $29) o inventó cupos limitados. Reescríbela: Black Friday = plan anual US$149 (en vez de US$228) hasta el 1 de diciembre, con garantía de reembolso de 7 días; también existe la opción mensual de US$19/mes. No hables de cupos limitados.',
+  oldOffer: /vital[ií]ci|pago [úu]nico|\$\s?29\b|29 ?usd|cupos? limitad|[úu]ltimas? (plazas|vagas|cupos|lugares)|solo quedan \d+/i,
+  pageTitle: 'ChatCode · Black Friday: anual por US$149',
+  ogTitle: 'Black Friday ChatCode: anual por US$149',
+  ogDesc: 'ChatCode Ilimitado anual por US$149 (en vez de US$228), con garantía de reembolso de 7 días. Termina el 1 de diciembre.',
+  ctaTitle: 'Black Friday: ChatCode anual por US$149',
+  ctaDetail: 'US$149 al año con garantía de reembolso de 7 días. Termina el 1 de diciembre.',
+  remarketingProduct: 'Black Friday: ChatCode Ilimitado anual por US$149 (en vez de US$228), con garantía de reembolso de 7 días, hasta el 1 de diciembre; la opción mensual de US$19 sigue existiendo. Nunca hables de cupos limitados.',
+  remarketingLink: 'Black Friday: US$149 al año, con garantía de reembolso de 7 días, hasta el 1 de diciembre',
+  learningProduct: 'ChatCode Ilimitado: Black Friday anual US$149 hasta el 1 de diciembre (garantía de reembolso de 7 días); después, US$19/mes. Es el producto principal.',
+  learningPolicy: 'Menciona el precio anual de Black Friday y su fecha final junto al link, sin inventar cupos limitados. Descarta reglas antiguas que ofrezcan oferta vitalicia o pago único.',
+  refundRole: 'Si pide el reembolso dentro de los 7 días de su pago, confirma que tiene la garantía y pásalo con una persona para devolverle el pago.',
+};
+
+const offer = () => {
+  const base = trialOn() ? TRIAL : GUARANTEE;
+  return bfOn() ? { ...base, ...BLACKFRIDAY } : base;
+};
+
+module.exports = { offer, trialOn, bfOn };
