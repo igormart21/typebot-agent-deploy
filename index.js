@@ -293,14 +293,17 @@ Use esses dados para fechar mais vendas. Adapte sua abordagem ao que está funci
 const MIDIA_RE = /^(imageMessage|documentMessage|documentWithCaptionMessage|audioMessage|videoMessage|stickerMessage)\|([A-Za-z0-9]+)$/;
 const NOME_MIDIA = { imageMessage: 'una imagen', documentMessage: 'un documento', documentWithCaptionMessage: 'un documento', audioMessage: 'un audio', videoMessage: 'un video', stickerMessage: 'un sticker' };
 
+let detalheMidia = '';
 async function baixarMidia(instancia, id) {
   const url = process.env.EVOLUTION_API_URL, key = process.env.EVOLUTION_API_KEY;
+  detalheMidia = `url=${url ? new URL(url).host : 'VAZIA'} chave=${key ? key.length + ' caracteres' : 'VAZIA'}`;
   if (!url || !key || !instancia) { console.error(`Midia: faltam variaveis (EVOLUTION_API_URL ${url ? 'ok' : 'VAZIA'}, EVOLUTION_API_KEY ${key ? 'ok' : 'VAZIA'}, instancia ${instancia ? 'ok' : 'VAZIA'})`); return null; }
   const r = await fetch(`${url}/chat/getBase64FromMediaMessage/${instancia}`, {
     method: 'POST',
     headers: { apikey: key, 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: { key: { id } }, convertToMp4: false })
   });
+  detalheMidia += ` http=${r.status}`;
   if (!r.ok) { console.error(`Midia: Evolution respondeu ${r.status} ao baixar ${id} da instancia ${instancia}`); return null; }
   const d = await r.json().catch(() => null);
   if (!d || !d.base64) console.error('Midia: Evolution nao devolveu base64');
@@ -327,9 +330,10 @@ async function interpretarMensagem(mensagem, instancia) {
   if (!m) return { texto: mensagem, conteudo: mensagem };
   const [, tipo, id] = m;
   const nome = NOME_MIDIA[tipo];
-  let motivo = 'midia nao baixada (variaveis ou resposta da Evolution)';
+  let motivo = 'midia nao baixada';
   try {
     const midia = await baixarMidia(instancia, id);
+    if (!midia) motivo = `midia nao baixada: ${detalheMidia}`;
     if (midia && tipo === 'audioMessage') {
       const t = await transcrever(midia);
       if (t) return { texto: `[audio] ${t}`, conteudo: `(El cliente envió un audio. Transcripción:) ${t}` };
