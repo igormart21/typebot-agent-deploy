@@ -18,6 +18,7 @@ const { registerRemarketingRoutes } = require('./remarketing');
 const { rolesSection, extractHandoff, notifyHandoff } = require('./roles');
 const memory = require('./memory');
 const { offer } = require('./offer');
+const voice = require('./voice');
 const blackfriday = require('./blackfriday');
 const cta = require('./cta');
 const { botReason } = require('./botguard');
@@ -559,6 +560,11 @@ app.post('/agente', async (req, res) => {
         [id]
       );
     }
+
+    /* Lead mandou audio: responde com nota de voz (so com AGENT_VOICE=on; sem link nem botao). */
+    if (!botao && canal === 'whatsapp' && await voice.replyWithVoice({
+      instancia: String(req.body.instancia || ''), remoteJid: String(req.body.remoteJid || ''), texto: resposta, leadTexto: entrada.texto,
+    })) return res.json({ resposta: '', voz: true });
 
     if (botao) {
       const instancia = String(req.body.instancia || '');
