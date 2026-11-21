@@ -118,14 +118,26 @@ async function absorberRemarketing(sessionId, remoteJid) {
   }
 }
 
-async function getHistory(sessionId) {
+async function getHistory(sessionId, remoteJid) {
   /* As MAIS RECENTES. Antes era ASC + LIMIT: pegava as 40 primeiras da
      conversa pra sempre, e uma conversa longa nunca via o que acabou de
-     ser dito. */
-  const result = await pool.query(
-    'SELECT role, content FROM messages WHERE session_id = $1 ORDER BY created_at DESC LIMIT $2',
-    [sessionId, MAX_HISTORY]
-  );
+     ser dito.
+     Com o numero do WhatsApp, junta TODAS as sessoes desse numero: o
+     sessionId e o resultId do Typebot e muda a cada sessao nova (expira em
+     ~30 min), e o agente esquecia o cliente e se apresentava de novo. */
+  const jid = String(remoteJid || '').trim();
+  const result = /^\d{5,25}@(s\.whatsapp\.net|lid)$/.test(jid)
+    ? await pool.query(
+        `SELECT role, content FROM messages
+          WHERE session_id = $1
+             OR session_id IN (SELECT id FROM sessions WHERE remote_jid = $3)
+          ORDER BY created_at DESC LIMIT $2`,
+        [sessionId, MAX_HISTORY, jid]
+      )
+    : await pool.query(
+        'SELECT role, content FROM messages WHERE session_id = $1 ORDER BY created_at DESC LIMIT $2',
+        [sessionId, MAX_HISTORY]
+      );
   return result.rows.reverse();
 }
 
@@ -195,6 +207,7 @@ CÓMO ESCRIBES (lo más importante):
 - Nunca inventes datos, estadísticas ni experiencias de clientes ("muchos clientes...", "miles de usuarios..."). Si no sabes algo, no lo afirmes.
 
 PRIMER MENSAJE (prioridad sobre cualquier otra regla, incluidas las aprendidas):
+- Si el historial ya tiene mensajes tuyos (aunque sean de otro día), el lead NO es nuevo: nunca vuelvas a presentarte ni repitas este saludo; sigue la conversación desde donde quedó, como alguien que lo recuerda (si pasó tiempo, un "¡Hola de nuevo!" breve basta).
 - Si en el historial todavía no hay ningún mensaje tuyo (es tu primera respuesta), sobre todo cuando el lead escribe algo como "Hola, quiero probar ChatCode": responde SOLO con este saludo, sin precio, sin link y sin explicar el producto: "¡Hola! 👋 Soy el asistente de ChatCode, un bot hecho con nuestra propia plataforma. ¿Qué tipo de negocio tienes?"
 - El precio y el link llegan después, cuando ya entendiste su negocio o cuando él pida el precio o cómo empezar. Si en su primer mensaje ya pregunta el precio o pide el link, respóndele eso directamente.
 
@@ -391,7 +404,7 @@ app.post('/agente', async (req, res) => {
 
     // Busca histórico do banco
     if (temId) await absorberRemarketing(id, req.body.remoteJid);
-    const historico = temId ? await getHistory(id) : [];
+    const historico = temId ? await getHistory(id, req.body.remoteJid) : [];
 
     /* Outro robo (IA, menu, resposta automatica): sessao ja marcada = nao gasta nada
        (nem transcricao de audio, nem OpenAI). Devolve resposta vazia, o bot nao envia. */
